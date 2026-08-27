@@ -33,8 +33,8 @@ export function SubirVersionForm() {
       }}
     >
       <div className="field">
-        <label>Render (imagen o PDF)</label>
-        <input className="input" type="file" name="render" accept="image/*,application/pdf" required />
+        <label>Render (una o más imágenes o PDF)</label>
+        <input className="input" type="file" name="render" accept="image/*,application/pdf" multiple required />
       </div>
       <div className="field">
         <label>Plano / mapa del stand (opcional, imagen o PDF)</label>

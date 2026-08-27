@@ -12,7 +12,7 @@ type VersionItem = {
   espacioNombre: string;
   version: string;
   estado: string;
-  renderUrl: string | null;
+  renderUrls: string[];
   mapaUrl: string | null;
   nota: string | null;
   fecha: string;
@@ -57,10 +57,12 @@ function Miniatura({ url, alt }: { url: string; alt: string }) {
 
 function Miniaturas({ v }: { v: VersionItem }) {
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      {v.renderUrl && <Miniatura url={v.renderUrl} alt="Render" />}
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {v.renderUrls.map((url, i) => (
+        <Miniatura key={url} url={url} alt={`Render ${i + 1}`} />
+      ))}
       {v.mapaUrl && <Miniatura url={v.mapaUrl} alt="Plano" />}
-      {!v.renderUrl && !v.mapaUrl && <span className="text-muted" style={{ fontSize: 12 }}>Sin archivos</span>}
+      {v.renderUrls.length === 0 && !v.mapaUrl && <span className="text-muted" style={{ fontSize: 12 }}>Sin archivos</span>}
     </div>
   );
 }

@@ -36,8 +36,8 @@ export function SubirVersionStaffForm({ espacioId }: { espacioId: string }) {
       <input type="hidden" name="espacioId" value={espacioId} />
       <h6 className="text-muted">Subir render en nombre del expositor</h6>
       <div className="field">
-        <label>Render (imagen o PDF)</label>
-        <input className="input" type="file" name="render" accept="image/*,application/pdf" required />
+        <label>Render (una o más imágenes o PDF)</label>
+        <input className="input" type="file" name="render" accept="image/*,application/pdf" multiple required />
       </div>
       <div className="field">
         <label>Plano / mapa del stand (opcional, imagen o PDF)</label>

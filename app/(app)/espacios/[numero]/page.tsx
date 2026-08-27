@@ -12,6 +12,22 @@ import { SubirVersionStaffForm } from "./SubirVersionStaffForm";
 
 export const dynamic = "force-dynamic";
 
+function Archivo({ url, alt }: { url: string; alt: string }) {
+  if (esPdf(url)) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="text-muted" style={{ fontSize: 12 }}>
+        📄 Ver {alt} (PDF)
+      </a>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={alt} style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+    </a>
+  );
+}
+
 export default async function FichaStandPage({ params }: { params: { numero: string } }) {
   const evento = await getEventoSeleccionado();
   if (!evento) notFound();
@@ -76,30 +92,12 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                     {fmtFecha(v.fecha)}
                   </span>
                 </div>
-                {(v.renderUrl || v.mapaUrl) && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                    {v.renderUrl &&
-                      (esPdf(v.renderUrl) ? (
-                        <a href={v.renderUrl} target="_blank" rel="noreferrer" className="text-muted" style={{ fontSize: 12 }}>
-                          📄 Ver render (PDF)
-                        </a>
-                      ) : (
-                        <a href={v.renderUrl} target="_blank" rel="noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={v.renderUrl} alt="Render" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-                        </a>
-                      ))}
-                    {v.mapaUrl &&
-                      (esPdf(v.mapaUrl) ? (
-                        <a href={v.mapaUrl} target="_blank" rel="noreferrer" className="text-muted" style={{ fontSize: 12 }}>
-                          📄 Ver plano (PDF)
-                        </a>
-                      ) : (
-                        <a href={v.mapaUrl} target="_blank" rel="noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={v.mapaUrl} alt="Plano" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-                        </a>
-                      ))}
+                {(v.renderUrls.length > 0 || v.mapaUrl) && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                    {v.renderUrls.map((url, i) => (
+                      <Archivo key={url} url={url} alt={`render ${i + 1}`} />
+                    ))}
+                    {v.mapaUrl && <Archivo url={v.mapaUrl} alt="plano" />}
                   </div>
                 )}
                 {v.nota && <p style={{ margin: "6px 0 0", fontSize: 13.5 }}>{v.nota}</p>}

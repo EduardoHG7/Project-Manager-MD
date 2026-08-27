@@ -510,11 +510,14 @@ export async function subirVersion(formData: FormData) {
   const numeroAnterior = ultima ? parseInt(ultima.version.replace(/\D/g, ""), 10) || 0 : 0;
   const version = `v${numeroAnterior + 1}`;
 
-  const render = formData.get("render");
-  if (!(render instanceof File) || render.size === 0) {
-    throw new Error("Debes adjuntar el render.");
+  const renders = formData.getAll("render").filter((f): f is File => f instanceof File && f.size > 0);
+  if (renders.length === 0) {
+    throw new Error("Debes adjuntar al menos una imagen o PDF del render.");
   }
-  const renderUrl = await guardarArchivo(render, "renders");
+  const renderUrls: string[] = [];
+  for (const render of renders) {
+    renderUrls.push(await guardarArchivo(render, "renders"));
+  }
 
   let mapaUrl: string | undefined;
   const mapa = formData.get("mapa");
@@ -529,7 +532,7 @@ export async function subirVersion(formData: FormData) {
       espacioId,
       version,
       estado: "PENDIENTE",
-      renderUrl,
+      renderUrls,
       mapaUrl,
       nota,
       autor: session.user.name || undefined,
@@ -566,7 +569,7 @@ export async function decidirVersion(versionId: string, estado: "APROBADA" | "RE
   if (estado === "APROBADA") {
     await prisma.espacio.update({
       where: { id: version.espacioId },
-      data: { estado: "APROBADO", renderUrl: version.renderUrl ?? undefined },
+      data: { estado: "APROBADO", renderUrl: version.renderUrls[0] ?? undefined },
     });
   }
 

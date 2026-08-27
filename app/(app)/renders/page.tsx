@@ -28,7 +28,7 @@ export default async function RendersPage() {
     espacioNombre: v.espacio.nombre,
     version: v.version,
     estado: v.estado,
-    renderUrl: v.renderUrl,
+    renderUrls: v.renderUrls,
     mapaUrl: v.mapaUrl,
     nota: v.nota,
     fecha: v.fecha.toISOString(),

@@ -159,8 +159,8 @@ model VersionEntrega {
   espacioId String
   version   String   // v1, v2, v3... (autogenerado)
   estado    String   @default("PENDIENTE") // PENDIENTE | APROBADA | RECHAZADA
-  renderUrl String?
-  mapaUrl   String?
+  renderUrls String[] @default([]) // una o más imágenes/PDF del render
+  mapaUrl    String?
   nota      String?  // nota del expositor al subir
   autor     String?  // nombre para mostrar (respaldo si no hay subidoPorId)
   fecha     DateTime @default(now())
