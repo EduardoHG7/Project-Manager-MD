@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Usuarios y roles ──────────────────────────────────────────────
+// ADMIN: acceso total. SUPERVISOR: puede registrar mediciones, fotos,
+// incumplimientos y cambiar estados. LECTURA: solo consulta.
+model Usuario {
+  id           String   @id @default(cuid())
+  nombre       String
+  email        String   @unique
+  passwordHash String
+  rol          String   @default("LECTURA")
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  mediciones       Medicion[]
+  incumplimientosCerrados Incumplimiento[] @relation("IncumplimientoCerradoPor")
+  visitas          VisitaProgramada[]
+
+  @@map("usuarios")
+}
+
+// ── El evento/feria que se está supervisando ─────────────────────
+model Evento {
+  id              String   @id @default(cuid())
+  nombre          String
+  recinto         String?
+  fechaInicio     DateTime
+  fechaFin        DateTime
+  montajeInicio   DateTime?
+  montajeFin      DateTime?
+  desmontajeInicio DateTime?
+  desmontajeFin   DateTime?
+  planoUrl        String?
+  planoAncho      Int      @default(1200)
+  planoAlto       Int      @default(628)
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  espacios Espacio[]
+
+  @@map("eventos")
+}
+
+// ── Grupo/distribuidor que representa la marca (ej. Autos Xtra) ──
+model Distribuidor {
+  id     String @id @default(cuid())
+  nombre String @unique
+
+  espacios Espacio[]
+
+  @@map("distribuidores")
+}
+
+// ── Empresa constructora del stand (ej. LARTI 3D) ─────────────────
+model ProveedorConstructor {
+  id       String @id @default(cuid())
+  nombre   String @unique
+  contacto String?
+  telefono String?
+
+  espacios         Espacio[]
+  incumplimientos  Incumplimiento[]
+
+  @@map("proveedores_constructores")
+}
+
+// ── Espacio: stand automotriz o módulo financiero ─────────────────
+model Espacio {
+  id          String   @id @default(cuid())
+  eventoId    String
+  numero      String   // "22", "1M", "F-BANESI"...
+  nombre      String   // marca / expositor
+  categoria   String   @default("AUTOMOTRIZ") // AUTOMOTRIZ | FINANCIERO
+  fila        String?  // A-E, para la vista de retícula
+  medidas     String?  // "15x20"
+  areaM2      Float?
+  alturaMaxCm Float    @default(550)
+  autosEnPiso Int?
+
+  estado      String   @default("SIN_RENDER") // SIN_RENDER|EN_REVISION|APROBADO|EN_FABRICACION|MONTADO|VERIFICADO
+
+  x           Float?   // posición en el plano, % del ancho
+  y           Float?   // posición en el plano, % del alto
+
+  renderUrl   String?  // imagen de referencia (render aprobado) para comparar vs. obra
+
+  distribuidorId String?
+  proveedorId     String?
+
+  fabricacionInicio DateTime?
+  fabricacionFin    DateTime?
+  montajeInicio     DateTime?
+  montajeFin        DateTime?
+  verificacionInicio DateTime?
+  verificacionFin    DateTime?
+  atrasadoMotivo     String?
+
+  cargaElectricaKw Float?
+  puntosLuz        String?
+  pisoTarima       String?
+  ultimaEntrega    DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  evento       Evento                @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  distribuidor Distribuidor?         @relation(fields: [distribuidorId], references: [id])
+  proveedor    ProveedorConstructor? @relation(fields: [proveedorId], references: [id])
+
+  etapas          EspacioEtapa[]
+  versiones       VersionEntrega[]
+  materiales      MaterialEspecificacion[]
+  pins            Pin[]
+  mediciones      Medicion[]
+  incumplimientos Incumplimiento[]
+  visitas         VisitaProgramada[]
+
+  @@unique([eventoId, numero])
+  @@map("espacios")
+}
+
+// ── Progreso por disciplina (Diseño, Estructura, Gráfica, Eléctrico) ─
+model EspacioEtapa {
+  id         String   @id @default(cuid())
+  espacioId  String
+  disciplina String   // DISENO | ESTRUCTURA | GRAFICA | ELECTRICO
+  estado     String   @default("PENDIENTE") // PENDIENTE | AHORA | APROBADO
+  detalle    String?
+  fecha      DateTime?
+  orden      Int      @default(0)
+
+  espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+
+  @@unique([espacioId, disciplina])
+  @@map("espacio_etapas")
+}
+
+// ── Historial de versiones de diseño (ficha de stand) ─────────────
+model VersionEntrega {
+  id        String   @id @default(cuid())
+  espacioId String
+  version   String   // v1, v2, v3...
+  estado    String   // Rechazado | Cambios solicitados | En revisión | Aprobado
+  nota      String?
+  autor     String?
+  fecha     DateTime @default(now())
+
+  espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+
+  @@map("versiones_entrega")
+}
+
+// ── Checklist de materiales/acabados de la ficha de stand ─────────
+model MaterialEspecificacion {
+  id        String  @id @default(cuid())
+  espacioId String
+  elemento  String
+  material  String?
+  color     String?
+  estado    String  @default("PENDIENTE") // CONFORME | EN_REVISION | NO_CONFORME | PENDIENTE
+  orden     Int     @default(0)
+
+  espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+
+  @@map("materiales_especificacion")
+}
+
+// ── Pin sobre el render/foto para comparar render vs. obra ────────
+model Pin {
+  id        String  @id @default(cuid())
+  espacioId String
+  numero    Int
+  x         Float   // % sobre la imagen de referencia
+  y         Float
+  elemento  String
+  nota      String?
+  fixNota   String?
+  resuelto  Boolean @default(false)
+
+  espacio    Espacio     @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  mediciones Medicion[]
+
+  @@map("pins")
+}
+
+// ── Medición de obra: checklist con foto + medida, obligatorio ────
+// Cuando valorMedido cae fuera de tolerancia, se crea automáticamente
+// un Incumplimiento enlazado a esta medición.
+model Medicion {
+  id             String   @id @default(cuid())
+  espacioId      String
+  pinId          String?
+  titulo         String
+  especificacion String   // texto de la spec aprobada, ej. "500 cm alto"
+  valorEsperado  Float?
+  valorMedido    Float?
+  unidad         String   @default("cm")
+  toleranciaMas  Float    @default(0)
+  toleranciaMenos Float   @default(0)
+  conforme       Boolean?
+  fotos          String   @default("[]") // JSON array de rutas /uploads/...
+  registradoPorId String?
+  createdAt      DateTime @default(now())
+
+  espacio      Espacio        @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  pin          Pin?           @relation(fields: [pinId], references: [id])
+  registradoPor Usuario?      @relation(fields: [registradoPorId], references: [id])
+  incumplimiento Incumplimiento?
+
+  @@map("mediciones")
+}
+
+// ── Reporte de incumplimiento / desviación ────────────────────────
+model Incumplimiento {
+  id             String    @id @default(cuid())
+  espacioId      String
+  medicionId     String?   @unique
+  severidad      String    @default("MENOR") // CRITICA | MAYOR | MENOR
+  titulo         String
+  detalle        String?
+  etapa          String?   // Diseño | Estructura | Gráfica | Eléctrico
+  proveedorId    String?
+  fechaLimite    DateTime?
+  estado         String    @default("ABIERTA") // ABIERTA | EN_CORRECCION | CERRADA
+  cerradoPorId   String?
+  cerradoEn      DateTime?
+  createdAt      DateTime  @default(now())
+
+  espacio    Espacio               @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  medicion   Medicion?             @relation(fields: [medicionId], references: [id])
+  proveedor  ProveedorConstructor? @relation(fields: [proveedorId], references: [id])
+  cerradoPor Usuario?              @relation("IncumplimientoCerradoPor", fields: [cerradoPorId], references: [id])
+
+  @@map("incumplimientos")
+}
+
+// ── Ruta de inspección del día (pantalla Obra) ────────────────────
+model VisitaProgramada {
+  id          String   @id @default(cuid())
+  espacioId   String
+  fecha       DateTime
+  hora        String
+  tarea       String
+  estado      String   @default("PENDIENTE") // PENDIENTE | EN_CURSO | CERRADO
+  asignadoAId String?
+  orden       Int      @default(0)
+
+  espacio   Espacio  @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  asignadoA Usuario? @relation(fields: [asignadoAId], references: [id])
+
+  @@map("visitas_programadas")
+}
