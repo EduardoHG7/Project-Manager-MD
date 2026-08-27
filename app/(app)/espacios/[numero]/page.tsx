@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getEventoActivo } from "@/lib/evento";
+import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_LABEL, ESTADO_PILL, fmtFecha } from "@/lib/estados";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
@@ -13,7 +13,8 @@ import { VersionesForm } from "./VersionesForm";
 export const dynamic = "force-dynamic";
 
 export default async function FichaStandPage({ params }: { params: { numero: string } }) {
-  const evento = await getEventoActivo();
+  const evento = await getEventoSeleccionado();
+  if (!evento) notFound();
   const session = await getServerSession(authOptions);
   const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 

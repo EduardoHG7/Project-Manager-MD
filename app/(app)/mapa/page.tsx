@@ -1,11 +1,18 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getEventoActivo } from "@/lib/evento";
+import { getEventoSeleccionado } from "@/lib/evento";
 import { MapaClient, type EspacioMapa } from "./MapaClient";
+import { SinEvento } from "../_shared/SinEvento";
 
 export const dynamic = "force-dynamic";
 
 export default async function MapaPage() {
-  const evento = await getEventoActivo();
+  const evento = await getEventoSeleccionado();
+  if (!evento) {
+    const session = await getServerSession(authOptions);
+    return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
+  }
 
   const espacios = await prisma.espacio.findMany({
     where: { eventoId: evento.id },
@@ -32,12 +39,5 @@ export default async function MapaPage() {
     tieneDesviacion: e.incumplimientos.length > 0,
   }));
 
-  return (
-    <MapaClient
-      espacios={data}
-      planoUrl={evento.planoUrl || "/plano/plano-general.png"}
-      planoAncho={evento.planoAncho}
-      planoAlto={evento.planoAlto}
-    />
-  );
+  return <MapaClient espacios={data} planoUrl={evento.planoUrl} />;
 }

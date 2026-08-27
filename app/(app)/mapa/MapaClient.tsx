@@ -32,13 +32,9 @@ function matchesFiltro(e: EspacioMapa, f: Filtro) {
 export function MapaClient({
   espacios,
   planoUrl,
-  planoAncho,
-  planoAlto,
 }: {
   espacios: EspacioMapa[];
-  planoUrl: string;
-  planoAncho: number;
-  planoAlto: number;
+  planoUrl: string | null;
 }) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [modo, setModo] = useState<"plan" | "grid">("plan");
@@ -89,11 +85,15 @@ export function MapaClient({
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 28, marginTop: 20, alignItems: "start" }}>
         <div>
-          {modo === "plan" ? (
+          {modo === "plan" && !planoUrl ? (
+            <div className="card elev-sm text-muted" style={{ padding: 40, textAlign: "center" }}>
+              Este evento todavía no tiene un plano cargado. Súbelo desde Admin → Eventos.
+            </div>
+          ) : modo === "plan" ? (
             <div className="card elev-sm" style={{ position: "relative", padding: 0, overflow: "hidden" }}>
-              <div style={{ position: "relative", width: "100%", aspectRatio: `${planoAncho} / ${planoAlto}` }}>
+              <div style={{ position: "relative" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={planoUrl} alt="Plano general" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                <img src={planoUrl!} alt="Plano general" style={{ width: "100%", display: "block" }} />
                 {espacios
                   .filter((e) => e.x != null && e.y != null)
                   .map((e) => {

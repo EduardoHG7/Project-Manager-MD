@@ -168,8 +168,6 @@ async function main() {
         desmontajeInicio: d(2026, 10, 20),
         desmontajeFin: d(2026, 10, 21),
         planoUrl: "/plano/plano-general.png",
-        planoAncho: PLANO_ANCHO,
-        planoAlto: PLANO_ALTO,
       },
     }));
 

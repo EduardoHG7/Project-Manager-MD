@@ -185,13 +185,13 @@ main.page { padding: 22px 28px 48px; max-width: 1400px; margin: 0 auto; }
 .error-text { color: var(--color-accent-700); font-size: 13px; font-weight: 600; }
 
 .stat-toggle { display: inline-flex; border: 1px solid var(--color-divider); }
-.stat-toggle button {
+.stat-toggle button, .stat-toggle a {
   border: 0; background: transparent; padding: 8px 13px; font-size: 11.5px; font-weight: 700;
   letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; color: var(--color-text);
-  border-right: 1px solid var(--color-divider);
+  border-right: 1px solid var(--color-divider); display: inline-flex; align-items: center;
 }
-.stat-toggle button:last-child { border-right: 0; }
-.stat-toggle button.active { background: var(--color-neutral-900); color: var(--color-bg); }
+.stat-toggle button:last-child, .stat-toggle a:last-child { border-right: 0; }
+.stat-toggle button.active, .stat-toggle a.active { background: var(--color-neutral-900); color: var(--color-bg); }
 
 .hotspot {
   position: absolute; transform: translate(-50%, -50%);

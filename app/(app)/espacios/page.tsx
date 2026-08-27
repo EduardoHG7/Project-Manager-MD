@@ -1,12 +1,19 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getEventoActivo } from "@/lib/evento";
+import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_LABEL, ESTADO_PILL } from "@/lib/estados";
+import { SinEvento } from "../_shared/SinEvento";
 
 export const dynamic = "force-dynamic";
 
 export default async function EspaciosIndexPage() {
-  const evento = await getEventoActivo();
+  const evento = await getEventoSeleccionado();
+  if (!evento) {
+    const session = await getServerSession(authOptions);
+    return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
+  }
   const espacios = await prisma.espacio.findMany({
     where: { eventoId: evento.id },
     include: { distribuidor: true, incumplimientos: { where: { estado: { not: "CERRADA" } }, select: { id: true } } },

@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getEventos, getEventoSeleccionado } from "@/lib/evento";
 import { AppShell } from "./AppShell";
 import { redirect } from "next/navigation";
 
@@ -8,10 +8,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const evento = await prisma.evento.findFirst({ where: { activo: true }, orderBy: { createdAt: "desc" } });
+  const [eventos, eventoSeleccionado] = await Promise.all([getEventos(), getEventoSeleccionado()]);
 
   return (
-    <AppShell userName={session.user.name || session.user.email || ""} rol={session.user.rol} eventoNombre={evento?.nombre}>
+    <AppShell
+      userName={session.user.name || session.user.email || ""}
+      rol={session.user.rol}
+      eventos={eventos.map((e) => ({ id: e.id, nombre: e.nombre }))}
+      eventoSeleccionadoId={eventoSeleccionado?.id ?? null}
+    >
       {children}
     </AppShell>
   );

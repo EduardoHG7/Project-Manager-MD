@@ -29,6 +29,11 @@ que acordarse de reportarlo.
   (abierta → en corrección → cerrada).
 - **Directorio** — expositores, grupos representantes y proveedores
   constructores.
+- **Admin** (solo rol ADMIN) — crear eventos nuevos (nombre, recinto,
+  fechas, plano del recinto), ubicar espacios haciendo clic sobre el plano,
+  y mantener el catálogo de distribuidores y proveedores constructores.
+  Pensado para que el equipo cargue la próxima feria sin tocar código: el
+  selector de evento en el encabezado cambia entre todas las que existan.
 
 ## Stack
 
@@ -97,7 +102,27 @@ en la base de datos (`npm run db:studio`) hasta que se agregue una
 pantalla de gestión de usuarios.
 
 Roles: `ADMIN` y `SUPERVISOR` pueden registrar mediciones, fotos,
-incumplimientos y cambiar estados; `LECTURA` solo consulta.
+incumplimientos y cambiar estados; `LECTURA` solo consulta. Solo `ADMIN`
+puede crear/editar eventos, espacios, distribuidores y proveedores desde
+**Admin**.
+
+## Cargar un evento nuevo (sin tocar código)
+
+Con sesión de `ADMIN`, desde **Admin → Eventos**:
+
+1. Crea el evento: nombre, recinto, fechas de apertura/montaje/desmontaje
+   y sube la imagen del plano del recinto.
+2. Entra a **Cargar espacios en el plano**, pulsa **+ Agregar espacio**,
+   haz clic en el punto del plano donde va cada stand y llena su ficha
+   (número, nombre, medidas, grupo, proveedor). Se puede reposicionar o
+   borrar cualquier espacio después.
+3. El selector de evento en el encabezado (arriba a la izquierda) cambia
+   entre todas las ferias cargadas — cada quien puede estar viendo una
+   distinta.
+
+Los grupos/distribuidores y proveedores constructores son compartidos
+entre eventos (**Admin → Distribuidores / Proveedores**): se cargan una
+vez y quedan disponibles para asignar en cualquier evento futuro.
 
 ## Datos de ejemplo
 

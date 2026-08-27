@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getEventoActivo } from "@/lib/evento";
+import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADOS, ESTADO_LABEL, ESTADO_FILL, SEVERIDAD_PILL, SEVERIDAD_LABEL, fmtFecha } from "@/lib/estados";
+import { SinEvento } from "../_shared/SinEvento";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +17,11 @@ const DISCIPLINA_LABEL: Record<string, string> = {
 };
 
 export default async function TableroPage() {
-  const evento = await getEventoActivo();
+  const evento = await getEventoSeleccionado();
+  if (!evento) {
+    const session = await getServerSession(authOptions);
+    return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
+  }
 
   const espacios = await prisma.espacio.findMany({
     where: { eventoId: evento.id },

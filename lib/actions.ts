@@ -1,21 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { randomUUID } from "crypto";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { evaluarConformidad, generarIncumplimientoSiAplica } from "@/lib/tolerancia";
+import { guardarArchivo } from "@/lib/upload";
+import { EVENTO_COOKIE } from "@/lib/evento";
 
-// En Vercel el disco no persiste entre invocaciones: si hay un token de
-// Vercel Blob configurado, las fotos se suben ahí. Sin token (desarrollo
-// local sin Blob configurado) caen a public/uploads en disco.
-async function guardarFotoEnBlob(file: File, nombre: string): Promise<string> {
-  const { put } = await import("@vercel/blob");
-  const blob = await put(`evidencia/${nombre}`, file, { access: "public" });
-  return blob.url;
+export async function seleccionarEvento(eventoId: string) {
+  cookies().set(EVENTO_COOKIE, eventoId, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+  revalidatePath("/", "layout");
 }
 
 async function requireEditor() {
@@ -27,19 +24,12 @@ async function requireEditor() {
   return session!;
 }
 
-async function guardarFoto(file: File): Promise<string> {
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const nombre = `${randomUUID()}.${ext}`;
-
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    return guardarFotoEnBlob(file, nombre);
+async function requireAdmin() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.rol !== "ADMIN") {
+    throw new Error("No tienes permiso para hacer cambios. Se requiere rol Admin.");
   }
-
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, nombre), bytes);
-  return `/uploads/${nombre}`;
+  return session;
 }
 
 export async function actualizarEstadoEspacio(espacioId: string, estado: string) {
@@ -158,7 +148,7 @@ export async function registrarMedicion(formData: FormData) {
   const fotos: string[] = [];
   const archivos = formData.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
   for (const archivo of archivos) {
-    fotos.push(await guardarFoto(archivo));
+    fotos.push(await guardarArchivo(archivo, "evidencia"));
   }
 
   const conforme = evaluarConformidad(valorEsperado, valorMedido, toleranciaMas, toleranciaMenos);
@@ -225,4 +215,186 @@ export async function crearVisita(data: { espacioId: string; fecha: string; hora
     },
   });
   revalidatePath("/obra");
+}
+
+// ── Admin: eventos ─────────────────────────────────────────────────
+
+function parseFechaOpcional(v: FormDataEntryValue | null): Date | null {
+  const s = v ? String(v) : "";
+  return s ? new Date(s) : null;
+}
+
+export async function crearEvento(formData: FormData) {
+  await requireAdmin();
+  const nombre = String(formData.get("nombre") || "").trim();
+  if (!nombre) throw new Error("El nombre del evento es obligatorio.");
+
+  let planoUrl: string | null = null;
+  const plano = formData.get("plano");
+  if (plano instanceof File && plano.size > 0) {
+    planoUrl = await guardarArchivo(plano, "planos");
+  }
+
+  const evento = await prisma.evento.create({
+    data: {
+      nombre,
+      recinto: String(formData.get("recinto") || "") || null,
+      fechaInicio: new Date(String(formData.get("fechaInicio"))),
+      fechaFin: new Date(String(formData.get("fechaFin"))),
+      montajeInicio: parseFechaOpcional(formData.get("montajeInicio")),
+      montajeFin: parseFechaOpcional(formData.get("montajeFin")),
+      desmontajeInicio: parseFechaOpcional(formData.get("desmontajeInicio")),
+      desmontajeFin: parseFechaOpcional(formData.get("desmontajeFin")),
+      planoUrl,
+    },
+  });
+
+  cookies().set(EVENTO_COOKIE, evento.id, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+  revalidatePath("/", "layout");
+  redirect(`/admin/eventos/${evento.id}`);
+}
+
+export async function actualizarEvento(id: string, formData: FormData) {
+  await requireAdmin();
+  const nombre = String(formData.get("nombre") || "").trim();
+  if (!nombre) throw new Error("El nombre del evento es obligatorio.");
+
+  const data: Record<string, unknown> = {
+    nombre,
+    recinto: String(formData.get("recinto") || "") || null,
+    fechaInicio: new Date(String(formData.get("fechaInicio"))),
+    fechaFin: new Date(String(formData.get("fechaFin"))),
+    montajeInicio: parseFechaOpcional(formData.get("montajeInicio")),
+    montajeFin: parseFechaOpcional(formData.get("montajeFin")),
+    desmontajeInicio: parseFechaOpcional(formData.get("desmontajeInicio")),
+    desmontajeFin: parseFechaOpcional(formData.get("desmontajeFin")),
+  };
+
+  const plano = formData.get("plano");
+  if (plano instanceof File && plano.size > 0) {
+    data.planoUrl = await guardarArchivo(plano, "planos");
+  }
+
+  await prisma.evento.update({ where: { id }, data });
+  revalidatePath("/", "layout");
+  revalidatePath(`/admin/eventos/${id}`);
+}
+
+export async function archivarEvento(id: string, activo: boolean) {
+  await requireAdmin();
+  await prisma.evento.update({ where: { id }, data: { activo } });
+  revalidatePath("/", "layout");
+}
+
+// ── Admin: espacios (clic en el plano) ───────────────────────────────
+
+type DatosEspacio = {
+  numero: string;
+  nombre: string;
+  categoria: string;
+  fila?: string;
+  medidas?: string;
+  areaM2?: number;
+  alturaMaxCm?: number;
+  distribuidorId?: string;
+  proveedorId?: string;
+};
+
+function limpiarDatosEspacio(data: DatosEspacio) {
+  return {
+    numero: data.numero.trim(),
+    nombre: data.nombre.trim(),
+    categoria: data.categoria,
+    fila: data.fila?.trim() || null,
+    medidas: data.medidas?.trim() || null,
+    areaM2: data.areaM2 ?? null,
+    alturaMaxCm: data.alturaMaxCm ?? 550,
+    distribuidorId: data.distribuidorId || null,
+    proveedorId: data.proveedorId || null,
+  };
+}
+
+export async function crearEspacio(eventoId: string, x: number, y: number, data: DatosEspacio) {
+  await requireAdmin();
+  if (!data.numero.trim() || !data.nombre.trim()) {
+    throw new Error("Número y nombre son obligatorios.");
+  }
+  try {
+    await prisma.espacio.create({
+      data: { eventoId, x, y, ...limpiarDatosEspacio(data) },
+    });
+  } catch (err: any) {
+    if (err?.code === "P2002") throw new Error(`Ya existe un espacio con el número "${data.numero}" en este evento.`);
+    throw err;
+  }
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
+}
+
+export async function actualizarEspacioAdmin(id: string, data: DatosEspacio) {
+  await requireAdmin();
+  if (!data.numero.trim() || !data.nombre.trim()) {
+    throw new Error("Número y nombre son obligatorios.");
+  }
+  try {
+    await prisma.espacio.update({ where: { id }, data: limpiarDatosEspacio(data) });
+  } catch (err: any) {
+    if (err?.code === "P2002") throw new Error(`Ya existe un espacio con el número "${data.numero}" en este evento.`);
+    throw err;
+  }
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
+}
+
+export async function reposicionarEspacio(id: string, x: number, y: number) {
+  await requireAdmin();
+  await prisma.espacio.update({ where: { id }, data: { x, y } });
+  revalidatePath("/mapa");
+}
+
+export async function eliminarEspacio(id: string) {
+  await requireAdmin();
+  await prisma.espacio.delete({ where: { id } });
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
+}
+
+// ── Admin: distribuidores y proveedores ──────────────────────────────
+
+export async function crearDistribuidor(nombre: string) {
+  await requireAdmin();
+  const n = nombre.trim();
+  if (!n) throw new Error("El nombre es obligatorio.");
+  await prisma.distribuidor.upsert({ where: { nombre: n }, update: {}, create: { nombre: n } });
+  revalidatePath("/admin/distribuidores");
+}
+
+export async function eliminarDistribuidor(id: string) {
+  await requireAdmin();
+  await prisma.distribuidor.delete({ where: { id } });
+  revalidatePath("/admin/distribuidores");
+}
+
+export async function crearProveedor(data: { nombre: string; contacto?: string; telefono?: string }) {
+  await requireAdmin();
+  const nombre = data.nombre.trim();
+  if (!nombre) throw new Error("El nombre es obligatorio.");
+  await prisma.proveedorConstructor.upsert({
+    where: { nombre },
+    update: { contacto: data.contacto || null, telefono: data.telefono || null },
+    create: { nombre, contacto: data.contacto || null, telefono: data.telefono || null },
+  });
+  revalidatePath("/admin/proveedores");
+}
+
+export async function eliminarProveedor(id: string) {
+  await requireAdmin();
+  await prisma.proveedorConstructor.delete({ where: { id } });
+  revalidatePath("/admin/proveedores");
 }

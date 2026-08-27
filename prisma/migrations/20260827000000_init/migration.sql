@@ -23,8 +23,6 @@ CREATE TABLE "eventos" (
     "desmontajeInicio" TIMESTAMP(3),
     "desmontajeFin" TIMESTAMP(3),
     "planoUrl" TEXT,
-    "planoAncho" INTEGER NOT NULL DEFAULT 1200,
-    "planoAlto" INTEGER NOT NULL DEFAULT 628,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

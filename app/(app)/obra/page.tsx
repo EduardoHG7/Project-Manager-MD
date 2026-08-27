@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getEventoActivo } from "@/lib/evento";
+import { getEventoSeleccionado } from "@/lib/evento";
 import { ObraClient } from "./ObraClient";
+import { SinEvento } from "../_shared/SinEvento";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,9 @@ function finDelDia(d: Date) {
 }
 
 export default async function ObraPage() {
-  const evento = await getEventoActivo();
+  const evento = await getEventoSeleccionado();
   const session = await getServerSession(authOptions);
+  if (!evento) return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
   const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 
   const hoy = new Date();

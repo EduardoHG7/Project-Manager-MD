@@ -39,8 +39,6 @@ model Evento {
   desmontajeInicio DateTime?
   desmontajeFin   DateTime?
   planoUrl        String?
-  planoAncho      Int      @default(1200)
-  planoAlto       Int      @default(628)
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
 
