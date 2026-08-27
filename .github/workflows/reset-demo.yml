@@ -1,0 +1,28 @@
+name: Resetear a "nada entregado aún"
+
+# Manual, a propósito — borra los datos de ejemplo (mediciones, pines,
+# materiales, versiones, incumplimientos, visitas) y regresa cada espacio
+# a "Sin render". No toca eventos, espacios, distribuidores, proveedores
+# ni usuarios. Es destructivo sobre esos datos de ejemplo: úsalo solo
+# cuando quieras arrancar el seguimiento real desde cero.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL }}
+      POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Resetear datos de ejemplo
+        run: npm run db:reset-demo

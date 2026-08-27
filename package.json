@@ -9,6 +9,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:reset-demo": "tsx prisma/reset-demo.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
