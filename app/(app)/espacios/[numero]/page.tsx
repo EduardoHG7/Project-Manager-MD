@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
-import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, fmtFecha, fmtFechaHora } from "@/lib/estados";
+import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFecha, fmtFechaHora } from "@/lib/estados";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
@@ -78,18 +78,28 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 </div>
                 {(v.renderUrl || v.mapaUrl) && (
                   <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                    {v.renderUrl && (
-                      <a href={v.renderUrl} target="_blank" rel="noreferrer">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={v.renderUrl} alt="Render" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-                      </a>
-                    )}
-                    {v.mapaUrl && (
-                      <a href={v.mapaUrl} target="_blank" rel="noreferrer">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={v.mapaUrl} alt="Plano" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-                      </a>
-                    )}
+                    {v.renderUrl &&
+                      (esPdf(v.renderUrl) ? (
+                        <a href={v.renderUrl} target="_blank" rel="noreferrer" className="text-muted" style={{ fontSize: 12 }}>
+                          📄 Ver render (PDF)
+                        </a>
+                      ) : (
+                        <a href={v.renderUrl} target="_blank" rel="noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={v.renderUrl} alt="Render" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+                        </a>
+                      ))}
+                    {v.mapaUrl &&
+                      (esPdf(v.mapaUrl) ? (
+                        <a href={v.mapaUrl} target="_blank" rel="noreferrer" className="text-muted" style={{ fontSize: 12 }}>
+                          📄 Ver plano (PDF)
+                        </a>
+                      ) : (
+                        <a href={v.mapaUrl} target="_blank" rel="noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={v.mapaUrl} alt="Plano" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+                        </a>
+                      ))}
                   </div>
                 )}
                 {v.nota && <p style={{ margin: "6px 0 0", fontSize: 13.5 }}>{v.nota}</p>}

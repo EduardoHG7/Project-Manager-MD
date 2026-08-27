@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { decidirVersion } from "@/lib/actions";
-import { VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, fmtFechaHora } from "@/lib/estados";
+import { VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFechaHora } from "@/lib/estados";
 
 type VersionItem = {
   id: string;
@@ -22,21 +22,44 @@ type VersionItem = {
   comentario: string | null;
 };
 
+function Miniatura({ url, alt }: { url: string; alt: string }) {
+  if (esPdf(url)) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-muted"
+        style={{
+          width: 110,
+          height: 80,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+          fontSize: 11,
+          border: "1px solid var(--color-divider)",
+          textAlign: "center",
+        }}
+      >
+        📄 Ver PDF
+      </a>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={alt} style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+    </a>
+  );
+}
+
 function Miniaturas({ v }: { v: VersionItem }) {
   return (
     <div style={{ display: "flex", gap: 8 }}>
-      {v.renderUrl && (
-        <a href={v.renderUrl} target="_blank" rel="noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={v.renderUrl} alt="Render" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-        </a>
-      )}
-      {v.mapaUrl && (
-        <a href={v.mapaUrl} target="_blank" rel="noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={v.mapaUrl} alt="Plano" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-        </a>
-      )}
+      {v.renderUrl && <Miniatura url={v.renderUrl} alt="Render" />}
+      {v.mapaUrl && <Miniatura url={v.mapaUrl} alt="Plano" />}
       {!v.renderUrl && !v.mapaUrl && <span className="text-muted" style={{ fontSize: 12 }}>Sin archivos</span>}
     </div>
   );

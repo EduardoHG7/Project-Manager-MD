@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { agregarPin } from "@/lib/actions";
+import { esPdf } from "@/lib/estados";
 import { MedicionForm } from "../../../_shared/MedicionForm";
 
 type PinData = {
@@ -74,7 +75,15 @@ export function CompararClient({
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 28, marginTop: 20, alignItems: "start" }}>
         <div>
-          {renderUrl ? (
+          {renderUrl && esPdf(renderUrl) ? (
+            <div className="card elev-sm text-muted" style={{ padding: 40, textAlign: "center" }}>
+              El render aprobado es un PDF, no se puede anotar con pines aquí.
+              <br />
+              <a href={renderUrl} target="_blank" rel="noreferrer">
+                📄 Abrir el PDF
+              </a>
+            </div>
+          ) : renderUrl ? (
             <div
               className="card elev-sm"
               style={{ position: "relative", padding: 0, cursor: canEdit ? "crosshair" : "default" }}

@@ -78,6 +78,10 @@ export function fmtFecha(d: Date | string | null | undefined) {
   return date.toLocaleDateString("es-PA", { day: "2-digit", month: "short" });
 }
 
+export function esPdf(url: string | null | undefined) {
+  return !!url && url.toLowerCase().endsWith(".pdf");
+}
+
 export function fmtFechaHora(d: Date | string | null | undefined) {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
