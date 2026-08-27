@@ -60,8 +60,26 @@ export const INCUMP_ESTADO_PILL: Record<string, string> = {
   CERRADA: "pill-ink",
 };
 
+export const VERSION_ESTADO_LABEL: Record<string, string> = {
+  PENDIENTE: "En revisión",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+};
+
+export const VERSION_ESTADO_PILL: Record<string, string> = {
+  PENDIENTE: "pill-soft",
+  APROBADA: "pill-ink",
+  RECHAZADA: "pill-red",
+};
+
 export function fmtFecha(d: Date | string | null | undefined) {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
   return date.toLocaleDateString("es-PA", { day: "2-digit", month: "short" });
+}
+
+export function fmtFechaHora(d: Date | string | null | undefined) {
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toLocaleString("es-PA", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }

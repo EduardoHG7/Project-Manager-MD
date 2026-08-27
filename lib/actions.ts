@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import bcrypt from "bcryptjs";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { evaluarConformidad, generarIncumplimientoSiAplica } from "@/lib/tolerancia";
@@ -30,6 +31,34 @@ async function requireAdmin() {
     throw new Error("No tienes permiso para hacer cambios. Se requiere rol Admin.");
   }
   return session;
+}
+
+async function requireExpositor() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.rol !== "EXPOSITOR") {
+    throw new Error("No autorizado.");
+  }
+  const usuario = await prisma.usuario.findUnique({ where: { id: session.user.id } });
+  if (!usuario?.espacioId) {
+    throw new Error("Tu usuario no tiene un espacio asignado. Contacta al organizador.");
+  }
+  return { session, espacioId: usuario.espacioId };
+}
+
+function generarContrasena(): string {
+  const alfabeto = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < 10; i++) out += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+  return out;
+}
+
+function slugificar(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export async function actualizarEstadoEspacio(espacioId: string, estado: string) {
@@ -397,4 +426,159 @@ export async function eliminarProveedor(id: string) {
   await requireAdmin();
   await prisma.proveedorConstructor.delete({ where: { id } });
   revalidatePath("/admin/proveedores");
+}
+
+// ── Admin: usuarios de operación (ADMIN / SUPERVISOR / LECTURA) ──────
+
+export async function crearUsuarioOperacion(data: { nombre: string; email: string; rol: string }) {
+  await requireAdmin();
+  const nombre = data.nombre.trim();
+  const email = data.email.trim().toLowerCase();
+  if (!nombre || !email) throw new Error("Nombre y usuario son obligatorios.");
+  if (!["ADMIN", "SUPERVISOR", "LECTURA"].includes(data.rol)) throw new Error("Rol inválido.");
+
+  const contrasena = generarContrasena();
+  const passwordHash = await bcrypt.hash(contrasena, 10);
+  try {
+    await prisma.usuario.create({ data: { nombre, email, passwordHash, rol: data.rol } });
+  } catch (err: any) {
+    if (err?.code === "P2002") throw new Error(`Ya existe un usuario con "${email}".`);
+    throw err;
+  }
+  revalidatePath("/admin/usuarios");
+  return { email, contrasena };
+}
+
+export async function activarUsuario(id: string, activo: boolean) {
+  await requireAdmin();
+  await prisma.usuario.update({ where: { id }, data: { activo } });
+  revalidatePath("/admin/usuarios");
+  revalidatePath("/directorio");
+}
+
+// ── Usuarios expositor: uno por espacio, creado desde el Directorio ──
+
+export async function crearUsuarioExpositor(espacioId: string) {
+  await requireAdmin();
+  const espacio = await prisma.espacio.findUniqueOrThrow({ where: { id: espacioId } });
+
+  const base = slugificar(`${espacio.nombre}-${espacio.numero}`) || `expositor-${espacio.numero}`;
+  let email = base;
+  let intento = 1;
+  while (await prisma.usuario.findUnique({ where: { email } })) {
+    intento += 1;
+    email = `${base}-${intento}`;
+  }
+
+  const contrasena = generarContrasena();
+  const passwordHash = await bcrypt.hash(contrasena, 10);
+  await prisma.usuario.create({
+    data: {
+      nombre: `${espacio.nombre} (expositor)`,
+      email,
+      passwordHash,
+      rol: "EXPOSITOR",
+      espacioId: espacio.id,
+    },
+  });
+
+  revalidatePath("/directorio");
+  return { email, contrasena };
+}
+
+export async function regenerarContrasenaUsuario(id: string) {
+  await requireAdmin();
+  const contrasena = generarContrasena();
+  const passwordHash = await bcrypt.hash(contrasena, 10);
+  const usuario = await prisma.usuario.update({ where: { id }, data: { passwordHash } });
+  revalidatePath("/directorio");
+  revalidatePath("/admin/usuarios");
+  return { email: usuario.email, contrasena };
+}
+
+// ── Flujo de renders: subir (expositor) / aprobar-rechazar (operación) ─
+
+export async function subirVersion(formData: FormData) {
+  const { session, espacioId } = await requireExpositor();
+
+  const ultima = await prisma.versionEntrega.findFirst({
+    where: { espacioId },
+    orderBy: { fecha: "desc" },
+  });
+  if (ultima && ultima.estado !== "RECHAZADA") {
+    throw new Error(
+      ultima.estado === "APROBADA"
+        ? "Este espacio ya tiene un render aprobado. No se pueden subir más versiones."
+        : "Ya hay una versión en revisión. Espera a que se apruebe o se rechace antes de subir otra."
+    );
+  }
+
+  const numeroAnterior = ultima ? parseInt(ultima.version.replace(/\D/g, ""), 10) || 0 : 0;
+  const version = `v${numeroAnterior + 1}`;
+
+  const render = formData.get("render");
+  if (!(render instanceof File) || render.size === 0) {
+    throw new Error("Debes adjuntar el render.");
+  }
+  const renderUrl = await guardarArchivo(render, "renders");
+
+  let mapaUrl: string | undefined;
+  const mapa = formData.get("mapa");
+  if (mapa instanceof File && mapa.size > 0) {
+    mapaUrl = await guardarArchivo(mapa, "renders");
+  }
+
+  const nota = String(formData.get("nota") || "").trim() || undefined;
+
+  await prisma.versionEntrega.create({
+    data: {
+      espacioId,
+      version,
+      estado: "PENDIENTE",
+      renderUrl,
+      mapaUrl,
+      nota,
+      autor: session.user.name || undefined,
+      subidoPorId: session.user.id,
+    },
+  });
+
+  await prisma.espacio.update({ where: { id: espacioId }, data: { estado: "EN_REVISION" } });
+
+  revalidatePath("/mi-stand");
+  revalidatePath("/renders");
+  revalidatePath("/tablero");
+  revalidatePath("/mapa");
+  revalidatePath("/directorio");
+}
+
+export async function decidirVersion(versionId: string, estado: "APROBADA" | "RECHAZADA", comentario?: string) {
+  const session = await requireEditor();
+  if (estado === "RECHAZADA" && !comentario?.trim()) {
+    throw new Error("Indica el motivo del rechazo para que el expositor sepa qué corregir.");
+  }
+
+  const version = await prisma.versionEntrega.update({
+    where: { id: versionId },
+    data: {
+      estado,
+      comentario: comentario?.trim() || null,
+      revisadoPorId: session.user.id,
+      revisadoEn: new Date(),
+    },
+  });
+
+  if (estado === "APROBADA") {
+    await prisma.espacio.update({
+      where: { id: version.espacioId },
+      data: { estado: "APROBADO", renderUrl: version.renderUrl ?? undefined },
+    });
+  }
+
+  revalidatePath("/renders");
+  revalidatePath("/mi-stand");
+  revalidatePath("/tablero");
+  revalidatePath("/mapa");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
 }

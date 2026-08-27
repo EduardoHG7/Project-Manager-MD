@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function LoginForm() {
@@ -26,7 +26,9 @@ function LoginForm() {
       setError("Usuario o contraseña incorrectos.");
       return;
     }
-    router.push(params.get("callbackUrl") || "/tablero");
+    const session = await getSession();
+    const destino = session?.user.rol === "EXPOSITOR" ? "/mi-stand" : params.get("callbackUrl") || "/tablero";
+    router.push(destino);
     router.refresh();
   }
 

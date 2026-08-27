@@ -11,6 +11,7 @@ datasource db {
 // ── Usuarios y roles ──────────────────────────────────────────────
 // ADMIN: acceso total. SUPERVISOR: puede registrar mediciones, fotos,
 // incumplimientos y cambiar estados. LECTURA: solo consulta.
+// EXPOSITOR: solo ve y sube renders/planos de SU espacio (espacioId).
 model Usuario {
   id           String   @id @default(cuid())
   nombre       String
@@ -18,11 +19,16 @@ model Usuario {
   passwordHash String
   rol          String   @default("LECTURA")
   activo       Boolean  @default(true)
+  espacioId    String?  @unique // solo para rol EXPOSITOR: su stand asignado
   createdAt    DateTime @default(now())
+
+  espacio Espacio? @relation("EspacioUsuario", fields: [espacioId], references: [id], onDelete: SetNull)
 
   mediciones       Medicion[]
   incumplimientosCerrados Incumplimiento[] @relation("IncumplimientoCerradoPor")
   visitas          VisitaProgramada[]
+  versionesSubidas   VersionEntrega[] @relation("VersionSubidaPor")
+  versionesRevisadas VersionEntrega[] @relation("VersionRevisadaPor")
 
   @@map("usuarios")
 }
@@ -120,6 +126,7 @@ model Espacio {
   mediciones      Medicion[]
   incumplimientos Incumplimiento[]
   visitas         VisitaProgramada[]
+  usuario         Usuario? @relation("EspacioUsuario")
 
   @@unique([eventoId, numero])
   @@map("espacios")
@@ -141,17 +148,31 @@ model EspacioEtapa {
   @@map("espacio_etapas")
 }
 
-// ── Historial de versiones de diseño (ficha de stand) ─────────────
+// ── Historial de versiones de render/plano (ficha de stand) ───────
+// Flujo: el expositor sube v1 (render + plano). Mientras esté PENDIENTE
+// no puede subir otra. Si se RECHAZA, puede subir la siguiente versión.
+// Si se APRUEBA, ese espacio queda cerrado — no se pueden subir más
+// versiones. revisadoPor/revisadoEn/comentario son el registro de
+// auditoría de quién aprobó o rechazó y cuándo.
 model VersionEntrega {
   id        String   @id @default(cuid())
   espacioId String
-  version   String   // v1, v2, v3...
-  estado    String   // Rechazado | Cambios solicitados | En revisión | Aprobado
-  nota      String?
-  autor     String?
+  version   String   // v1, v2, v3... (autogenerado)
+  estado    String   @default("PENDIENTE") // PENDIENTE | APROBADA | RECHAZADA
+  renderUrl String?
+  mapaUrl   String?
+  nota      String?  // nota del expositor al subir
+  autor     String?  // nombre para mostrar (respaldo si no hay subidoPorId)
   fecha     DateTime @default(now())
 
-  espacio Espacio @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  subidoPorId   String?
+  revisadoPorId String?
+  revisadoEn    DateTime?
+  comentario    String? // motivo de rechazo / nota de aprobación
+
+  espacio     Espacio  @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  subidoPor   Usuario? @relation("VersionSubidaPor", fields: [subidoPorId], references: [id])
+  revisadoPor Usuario? @relation("VersionRevisadaPor", fields: [revisadoPorId], references: [id])
 
   @@map("versiones_entrega")
 }

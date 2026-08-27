@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+  if (session.user.rol === "EXPOSITOR") redirect("/mi-stand");
 
   const [eventos, eventoSeleccionado] = await Promise.all([getEventos(), getEventoSeleccionado()]);
 

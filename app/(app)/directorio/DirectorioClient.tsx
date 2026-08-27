@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { actualizarEspacioAdmin, actualizarEstadoEspacio } from "@/lib/actions";
 import { ESTADOS, ESTADO_LABEL, ESTADO_PILL } from "@/lib/estados";
+import { AccesoExpositor } from "./AccesoExpositor";
 
 type Espacio = {
   id: string;
@@ -17,6 +18,7 @@ type Espacio = {
   distribuidorId: string | null;
   proveedorId: string | null;
   tieneDesviacion: boolean;
+  usuario: { id: string; email: string; activo: boolean } | null;
 };
 
 type Opcion = { id: string; nombre: string };
@@ -73,6 +75,7 @@ export function DirectorioClient({
             <th>m²</th>
             <th>Proveedor de stand</th>
             <th>Estado</th>
+            {canEdit && <th>Acceso expositor</th>}
           </tr>
         </thead>
         <tbody>
@@ -189,6 +192,11 @@ export function DirectorioClient({
                   </span>
                 )}
               </td>
+              {canEdit && (
+                <td>
+                  <AccesoExpositor espacioId={e.id} usuario={e.usuario} />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

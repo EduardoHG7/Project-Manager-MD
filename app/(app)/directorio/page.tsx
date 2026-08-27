@@ -19,6 +19,7 @@ export default async function DirectorioPage() {
       distribuidor: true,
       proveedor: true,
       incumplimientos: { where: { estado: { not: "CERRADA" } }, select: { id: true } },
+      usuario: { select: { id: true, email: true, activo: true } },
     },
     orderBy: [{ categoria: "asc" }, { fila: "asc" }, { numero: "asc" }],
   });
@@ -55,6 +56,7 @@ export default async function DirectorioPage() {
           distribuidorId: e.distribuidorId,
           proveedorId: e.proveedorId,
           tieneDesviacion: e.incumplimientos.length > 0,
+          usuario: e.usuario,
         }))}
         distribuidores={distribuidores.map((d) => ({ id: d.id, nombre: d.nombre }))}
         proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}

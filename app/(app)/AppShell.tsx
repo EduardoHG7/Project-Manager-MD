@@ -14,6 +14,7 @@ const TABS = [
   { href: "/calendario", label: "Calendario" },
   { href: "/incumplimientos", label: "Incumplimientos" },
   { href: "/directorio", label: "Directorio" },
+  { href: "/renders", label: "Renders" },
 ];
 
 export function AppShell({

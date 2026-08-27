@@ -7,6 +7,7 @@ const TABS = [
   { href: "/admin/eventos", label: "Eventos" },
   { href: "/admin/distribuidores", label: "Distribuidores" },
   { href: "/admin/proveedores", label: "Proveedores" },
+  { href: "/admin/usuarios", label: "Usuarios" },
 ];
 
 export function AdminNav() {
