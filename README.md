@@ -54,13 +54,17 @@ propio — nunca en una plataforma serverless.
 4. Cada `git push` a `main` hace deploy y corre `prisma migrate deploy`
    automáticamente como parte del build (ver `package.json`).
 5. La base de datos arranca vacía. Para cargar el Panama Motor Show Oct
-   2026 real, corre el seed una vez apuntando a la base de producción:
-   ```bash
-   npm install -g vercel   # si no la tienes
-   vercel link             # conecta esta carpeta al proyecto en Vercel
-   vercel env pull .env.local
-   npm run db:seed
-   ```
+   2026 real, hay un workflow de GitHub Actions listo
+   (`.github/workflows/seed.yml`) que corre el seed contra producción sin
+   necesitar nada instalado localmente:
+   1. En Vercel, Settings → Environment Variables, copia los valores de
+      `POSTGRES_PRISMA_URL` y `POSTGRES_URL_NON_POOLING`.
+   2. En GitHub, Settings → Secrets and variables → Actions, crea esos
+      dos secrets con esos valores (mismos nombres).
+   3. En la pestaña **Actions** del repo, corre manualmente el workflow
+      "Sembrar datos del Panama Motor Show" (botón "Run workflow").
+
+   Es seguro volver a correrlo — el seed usa `upsert` y no duplica datos.
 
 ## Primeros pasos (desarrollo local)
 

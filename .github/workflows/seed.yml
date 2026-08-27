@@ -1,0 +1,29 @@
+name: Sembrar datos del Panama Motor Show
+
+# Se dispara a mano desde la pestaña Actions del repo, no en cada push —
+# el seed es idempotente (usa upsert), pero solo tiene sentido correrlo
+# cuando se conecta una base de datos nueva o se quiere reforzar los datos.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL }}
+      POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Aplicar migraciones (por si el deploy de Vercel aún no corrió)
+        run: npx prisma migrate deploy
+
+      - name: Sembrar datos reales del Panama Motor Show Oct 2026
+        run: npm run db:seed
