@@ -23,7 +23,7 @@ function LoginForm() {
     });
     setLoading(false);
     if (res?.error) {
-      setError("Correo o contraseña incorrectos.");
+      setError("Usuario o contraseña incorrectos.");
       return;
     }
     router.push(params.get("callbackUrl") || "/tablero");
@@ -38,11 +38,11 @@ function LoginForm() {
           <h2 style={{ margin: 0 }}>Iniciar sesión</h2>
         </div>
         <div className="field">
-          <label htmlFor="email">Correo</label>
+          <label htmlFor="email">Usuario</label>
           <input
             id="email"
             className="input"
-            type="email"
+            type="text"
             required
             autoComplete="username"
             value={email}

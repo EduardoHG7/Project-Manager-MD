@@ -137,9 +137,9 @@ async function main() {
   const passwordHash = await bcrypt.hash("MotorShow2026!", 10);
   const [admin, supervisor] = await Promise.all([
     prisma.usuario.upsert({
-      where: { email: "admin@motorshow.pa" },
+      where: { email: "eherrera" },
       update: {},
-      create: { nombre: "Administrador", email: "admin@motorshow.pa", passwordHash, rol: "ADMIN" },
+      create: { nombre: "Administrador", email: "eherrera", passwordHash, rol: "ADMIN" },
     }),
     prisma.usuario.upsert({
       where: { email: "supervisor@motorshow.pa" },
@@ -597,7 +597,7 @@ async function main() {
   }
 
   console.log("Listo. Usuarios de acceso:");
-  console.log("  admin@motorshow.pa      / MotorShow2026!  (ADMIN)");
+  console.log("  eherrera                / MotorShow2026!  (ADMIN)");
   console.log("  supervisor@motorshow.pa / MotorShow2026!  (SUPERVISOR)");
   console.log("  lectura@motorshow.pa    / MotorShow2026!  (LECTURA)");
 }

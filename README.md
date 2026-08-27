@@ -90,9 +90,9 @@ npm run dev
 
 Abre http://localhost:3000 — usuarios de acceso creados por el seed:
 
-| Correo                     | Contraseña       | Rol         |
+| Usuario                     | Contraseña       | Rol         |
 |-----------------------------|------------------|-------------|
-| admin@motorshow.pa          | MotorShow2026!   | ADMIN       |
+| eherrera                    | MotorShow2026!   | ADMIN       |
 | supervisor@motorshow.pa     | MotorShow2026!   | SUPERVISOR  |
 | lectura@motorshow.pa        | MotorShow2026!   | LECTURA     |
 
