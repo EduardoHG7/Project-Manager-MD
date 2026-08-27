@@ -1,19 +1,17 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
-import { ESTADO_LABEL, ESTADO_PILL } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
+import { DirectorioClient } from "./DirectorioClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DirectorioPage() {
   const evento = await getEventoSeleccionado();
-  if (!evento) {
-    const session = await getServerSession(authOptions);
-    return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
-  }
+  const session = await getServerSession(authOptions);
+  if (!evento) return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
+  const canEdit = session?.user.rol === "ADMIN";
 
   const espacios = await prisma.espacio.findMany({
     where: { eventoId: evento.id },
@@ -38,44 +36,29 @@ export default async function DirectorioPage() {
   return (
     <main className="page">
       <h2>Directorio</h2>
-      <p className="text-muted">Expositores, grupos representantes y proveedores de montaje.</p>
+      <p className="text-muted">
+        Expositores, grupos representantes y proveedores de montaje.
+        {canEdit && " Haz clic en cualquier celda para editarla."}
+      </p>
 
-      <div className="table-wrap" style={{ marginTop: 16 }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Expositor</th>
-              <th>Grupo / representante</th>
-              <th>Medidas</th>
-              <th>m²</th>
-              <th>Proveedor de stand</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {espacios.map((e) => (
-              <tr key={e.id}>
-                <td style={{ fontWeight: 700 }}>{e.numero}</td>
-                <td>
-                  <Link href={`/espacios/${encodeURIComponent(e.numero)}`} style={{ color: "inherit" }}>
-                    {e.nombre}
-                  </Link>
-                </td>
-                <td className="text-muted">{e.distribuidor?.nombre || "—"}</td>
-                <td>{e.medidas || "—"}</td>
-                <td>{e.areaM2 ?? "—"}</td>
-                <td>{e.proveedor?.nombre || "—"}</td>
-                <td>
-                  <span className={`pill ${e.incumplimientos.length ? "pill-red" : ESTADO_PILL[e.estado]}`}>
-                    {e.incumplimientos.length ? "Desviación" : ESTADO_LABEL[e.estado]}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DirectorioClient
+        canEdit={canEdit}
+        espacios={espacios.map((e) => ({
+          id: e.id,
+          numero: e.numero,
+          nombre: e.nombre,
+          categoria: e.categoria,
+          medidas: e.medidas,
+          areaM2: e.areaM2,
+          alturaMaxCm: e.alturaMaxCm,
+          estado: e.estado,
+          distribuidorId: e.distribuidorId,
+          proveedorId: e.proveedorId,
+          tieneDesviacion: e.incumplimientos.length > 0,
+        }))}
+        distribuidores={distribuidores.map((d) => ({ id: d.id, nombre: d.nombre }))}
+        proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}
+      />
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 28, marginTop: 32 }}>
         <section>
