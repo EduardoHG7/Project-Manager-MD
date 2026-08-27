@@ -4,8 +4,11 @@ import path from "path";
 
 async function guardarEnBlob(file: File, nombre: string, carpeta: string): Promise<string> {
   const { put } = await import("@vercel/blob");
-  const blob = await put(`${carpeta}/${nombre}`, file, { access: "public" });
-  return blob.url;
+  const blob = await put(`${carpeta}/${nombre}`, file, { access: "private" });
+  // El store es privado: la URL de Vercel Blob no es accesible directamente
+  // desde el navegador. Se sirve a través de nuestra propia ruta, que la
+  // busca en Blob con el token en el servidor.
+  return `/api/archivos?u=${encodeURIComponent(blob.url)}`;
 }
 
 /**
