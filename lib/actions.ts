@@ -33,16 +33,27 @@ async function requireAdmin() {
   return session;
 }
 
-async function requireExpositor() {
+// Expositor solo puede subir para su propio espacio; operación (admin/supervisor)
+// puede subir en nombre de cualquier espacio, indicando espacioId en el formData.
+async function resolverEspacioParaSubida(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (session?.user?.rol !== "EXPOSITOR") {
-    throw new Error("No autorizado.");
+  const rol = session?.user?.rol;
+
+  if (rol === "EXPOSITOR") {
+    const usuario = await prisma.usuario.findUnique({ where: { id: session!.user.id } });
+    if (!usuario?.espacioId) {
+      throw new Error("Tu usuario no tiene un espacio asignado. Contacta al organizador.");
+    }
+    return { session: session!, espacioId: usuario.espacioId };
   }
-  const usuario = await prisma.usuario.findUnique({ where: { id: session.user.id } });
-  if (!usuario?.espacioId) {
-    throw new Error("Tu usuario no tiene un espacio asignado. Contacta al organizador.");
+
+  if (rol === "ADMIN" || rol === "SUPERVISOR") {
+    const espacioId = String(formData.get("espacioId") || "");
+    if (!espacioId) throw new Error("Falta el espacio.");
+    return { session: session!, espacioId };
   }
-  return { session, espacioId: usuario.espacioId };
+
+  throw new Error("No autorizado.");
 }
 
 function generarContrasena(): string {
@@ -120,23 +131,6 @@ export async function guardarMaterial(
       },
     });
   }
-  revalidatePath("/espacios");
-}
-
-export async function agregarVersion(
-  espacioId: string,
-  data: { version: string; estado: string; nota?: string; autor?: string }
-) {
-  const session = await requireEditor();
-  await prisma.versionEntrega.create({
-    data: {
-      espacioId,
-      version: data.version,
-      estado: data.estado,
-      nota: data.nota,
-      autor: data.autor || session.user.name || session.user.email || undefined,
-    },
-  });
   revalidatePath("/espacios");
 }
 
@@ -499,7 +493,7 @@ export async function regenerarContrasenaUsuario(id: string) {
 // ── Flujo de renders: subir (expositor) / aprobar-rechazar (operación) ─
 
 export async function subirVersion(formData: FormData) {
-  const { session, espacioId } = await requireExpositor();
+  const { session, espacioId } = await resolverEspacioParaSubida(formData);
 
   const ultima = await prisma.versionEntrega.findFirst({
     where: { espacioId },
@@ -550,6 +544,7 @@ export async function subirVersion(formData: FormData) {
   revalidatePath("/tablero");
   revalidatePath("/mapa");
   revalidatePath("/directorio");
+  revalidatePath("/espacios");
 }
 
 export async function decidirVersion(versionId: string, estado: "APROBADA" | "RECHAZADA", comentario?: string) {

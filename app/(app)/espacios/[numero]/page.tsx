@@ -4,11 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
-import { ESTADO_LABEL, ESTADO_PILL, fmtFecha } from "@/lib/estados";
+import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, fmtFecha, fmtFechaHora } from "@/lib/estados";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
-import { VersionesForm } from "./VersionesForm";
+import { SubirVersionStaffForm } from "./SubirVersionStaffForm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function FichaStandPage({ params }: { params: { numero: str
       distribuidor: true,
       proveedor: true,
       etapas: { orderBy: { orden: "asc" } },
-      versiones: { orderBy: { fecha: "desc" } },
+      versiones: { orderBy: { fecha: "desc" }, include: { subidoPor: true, revisadoPor: true } },
       materiales: { orderBy: { orden: "asc" } },
       pins: true,
       incumplimientos: { where: { estado: { not: "CERRADA" } } },
@@ -71,17 +71,55 @@ export default async function FichaStandPage({ params }: { params: { numero: str
               <div key={v.id} className="card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <strong>{v.version}</strong>
-                  <span className="pill pill-soft">{v.estado}</span>
+                  <span className={`pill ${VERSION_ESTADO_PILL[v.estado]}`}>{VERSION_ESTADO_LABEL[v.estado] || v.estado}</span>
                   <span className="text-muted" style={{ fontSize: 12 }}>
                     {fmtFecha(v.fecha)}
                   </span>
                 </div>
-                {v.nota && <p style={{ margin: 0, fontSize: 13.5 }}>{v.nota}</p>}
-                {v.autor && <span className="text-muted" style={{ fontSize: 11 }}>{v.autor}</span>}
+                {(v.renderUrl || v.mapaUrl) && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    {v.renderUrl && (
+                      <a href={v.renderUrl} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={v.renderUrl} alt="Render" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+                      </a>
+                    )}
+                    {v.mapaUrl && (
+                      <a href={v.mapaUrl} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={v.mapaUrl} alt="Plano" style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
+                      </a>
+                    )}
+                  </div>
+                )}
+                {v.nota && <p style={{ margin: "6px 0 0", fontSize: 13.5 }}>{v.nota}</p>}
+                <span className="text-muted" style={{ fontSize: 11 }}>
+                  Subido por {v.subidoPor?.nombre || v.autor || "—"}
+                </span>
+                {v.revisadoEn && (
+                  <p className="text-muted" style={{ fontSize: 11.5, margin: "4px 0 0" }}>
+                    {VERSION_ESTADO_LABEL[v.estado]} por {v.revisadoPor?.nombre || "—"} · {fmtFechaHora(v.revisadoEn)}
+                    {v.comentario && `: ${v.comentario}`}
+                  </p>
+                )}
               </div>
             ))}
           </div>
-          {canEdit && <VersionesForm espacioId={espacio.id} />}
+          {canEdit &&
+            (() => {
+              const ultima = espacio.versiones[0];
+              const puedeSubir = !ultima || ultima.estado === "RECHAZADA";
+              if (puedeSubir) return <SubirVersionStaffForm espacioId={espacio.id} />;
+              return (
+                <p className="text-muted" style={{ marginTop: 12, fontSize: 13 }}>
+                  {ultima.estado === "APROBADA"
+                    ? "Esta versión ya fue aprobada. No se necesitan más versiones."
+                    : "Hay una versión en revisión. Apruébala o recházala en "}
+                  {ultima.estado !== "APROBADA" && <Link href="/renders">Renders</Link>}
+                  {ultima.estado !== "APROBADA" && " antes de subir otra."}
+                </p>
+              );
+            })()}
         </section>
 
         <aside>
