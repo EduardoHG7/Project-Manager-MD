@@ -9,6 +9,15 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { evaluarConformidad, generarIncumplimientoSiAplica } from "@/lib/tolerancia";
 
+// En Vercel el disco no persiste entre invocaciones: si hay un token de
+// Vercel Blob configurado, las fotos se suben ahí. Sin token (desarrollo
+// local sin Blob configurado) caen a public/uploads en disco.
+async function guardarFotoEnBlob(file: File, nombre: string): Promise<string> {
+  const { put } = await import("@vercel/blob");
+  const blob = await put(`evidencia/${nombre}`, file, { access: "public" });
+  return blob.url;
+}
+
 async function requireEditor() {
   const session = await getServerSession(authOptions);
   const rol = session?.user?.rol;
@@ -19,11 +28,16 @@ async function requireEditor() {
 }
 
 async function guardarFoto(file: File): Promise<string> {
-  const bytes = Buffer.from(await file.arrayBuffer());
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const nombre = `${randomUUID()}.${ext}`;
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    return guardarFotoEnBlob(file, nombre);
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
-  const nombre = `${randomUUID()}.${ext}`;
   await writeFile(path.join(dir, nombre), bytes);
   return `/uploads/${nombre}`;
 }

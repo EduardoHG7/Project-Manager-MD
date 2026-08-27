@@ -32,30 +32,50 @@ que acordarse de reportarlo.
 
 ## Stack
 
-Next.js 14 (App Router) + TypeScript + Prisma + SQLite + NextAuth
+Next.js 14 (App Router) + TypeScript + Prisma + Postgres + NextAuth
 (credenciales + roles). Sin CSS framework: los tokens de diseño están en
 `app/globals.css`.
 
-SQLite se eligió para que el sistema arranque sin infraestructura externa
-(un único archivo `prisma/dev.db`). Para producción con más de una
-instancia o mayor concurrencia, cambia `DATABASE_URL` a Postgres en
-`.env` — el `schema.prisma` usa `env("DATABASE_URL")`, así que solo hay
-que ajustar el `provider` del datasource a `postgresql` y correr
-`prisma migrate dev` de nuevo.
+Las fotos de evidencia suben a **Vercel Blob** cuando `BLOB_READ_WRITE_TOKEN`
+está configurado (producción); sin esa variable caen a `public/uploads/`
+en disco, que solo sirve para desarrollo local o un servidor con disco
+propio — nunca en una plataforma serverless.
 
-Las fotos de evidencia se guardan en `public/uploads/`. Si despliegas en
-una plataforma serverless (Vercel), ese disco no persiste entre
-despliegues — usa un volumen persistente (Docker + VPS, Fly.io, Railway)
-o cambia `guardarFoto` en `lib/actions.ts` para subir a un bucket
-(Vercel Blob, S3, etc.).
+## Desplegar en Vercel
 
-## Primeros pasos
+1. En vercel.com/new, importa este repositorio.
+2. En el proyecto → **Storage**, agrega **Vercel Postgres** y **Vercel
+   Blob**. Vercel inyecta `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`
+   y `BLOB_READ_WRITE_TOKEN` solo con conectarlas — no hay que copiar nada
+   a mano.
+3. En **Settings → Environment Variables**, agrega `NEXTAUTH_SECRET` (genera
+   uno con `openssl rand -base64 32`) y `NEXTAUTH_URL` (la URL pública del
+   deploy, ej. `https://tu-proyecto.vercel.app`).
+4. Cada `git push` a `main` hace deploy y corre `prisma migrate deploy`
+   automáticamente como parte del build (ver `package.json`).
+5. La base de datos arranca vacía. Para cargar el Panama Motor Show Oct
+   2026 real, corre el seed una vez apuntando a la base de producción:
+   ```bash
+   npm install -g vercel   # si no la tienes
+   vercel link             # conecta esta carpeta al proyecto en Vercel
+   vercel env pull .env.local
+   npm run db:seed
+   ```
+
+## Primeros pasos (desarrollo local)
+
+Necesitas un Postgres accesible — el más simple es usar el mismo de
+Vercel: crea el proyecto ahí primero (ver arriba), conecta la integración
+Postgres, y trae las variables con `vercel env pull .env.local`. También
+sirve cualquier Postgres propio (Docker, Neon, Supabase) puesto en
+`POSTGRES_PRISMA_URL` y `POSTGRES_URL_NON_POOLING` (puede ser la misma
+URL en ambas si no usas connection pooling).
 
 ```bash
 npm install
-cp .env.example .env       # ajusta NEXTAUTH_SECRET
-npx prisma migrate dev      # crea prisma/dev.db con el esquema
-npm run db:seed             # carga el Panama Motor Show Oct 2026 real
+cp .env.example .env.local   # o `vercel env pull .env.local`
+npx prisma migrate dev        # aplica el esquema
+npm run db:seed               # carga el Panama Motor Show Oct 2026 real
 npm run dev
 ```
 
