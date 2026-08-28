@@ -97,6 +97,10 @@ model Espacio {
 
   renderUrl   String?  // imagen de referencia (render aprobado) para comparar vs. obra
 
+  personaContacto  String?
+  telefonoContacto String?
+  correoContacto   String?
+
   distribuidorId String?
   proveedorId     String?
 

@@ -320,30 +320,56 @@ export async function archivarEvento(id: string, activo: boolean) {
 
 // ── Admin: espacios (clic en el plano) ───────────────────────────────
 
+// Los campos opcionales aceptan string|number para poner un valor, null
+// para borrarlo explícitamente, o simplemente omitirse (undefined) para
+// dejarlo como está en la base de datos.
 type DatosEspacio = {
   numero: string;
   nombre: string;
   categoria: string;
-  fila?: string;
-  medidas?: string;
-  areaM2?: number;
+  fila?: string | null;
+  medidas?: string | null;
+  areaM2?: number | null;
   alturaMaxCm?: number;
-  distribuidorId?: string;
-  proveedorId?: string;
+  personaContacto?: string | null;
+  telefonoContacto?: string | null;
+  correoContacto?: string | null;
+  distribuidorId?: string | null;
+  proveedorId?: string | null;
 };
 
+// Campos opcionales: si el llamador no los manda (undefined), no se tocan
+// en la base de datos — así una edición parcial (ej. desde Directorio) no
+// borra datos que se cargaron desde otra pantalla (ej. el editor de plano).
 function limpiarDatosEspacio(data: DatosEspacio) {
-  return {
+  const out: {
+    numero: string;
+    nombre: string;
+    categoria: string;
+    alturaMaxCm: number;
+    fila?: string | null;
+    medidas?: string | null;
+    areaM2?: number | null;
+    personaContacto?: string | null;
+    telefonoContacto?: string | null;
+    correoContacto?: string | null;
+    distribuidorId?: string | null;
+    proveedorId?: string | null;
+  } = {
     numero: data.numero.trim(),
     nombre: data.nombre.trim(),
     categoria: data.categoria,
-    fila: data.fila?.trim() || null,
-    medidas: data.medidas?.trim() || null,
-    areaM2: data.areaM2 ?? null,
     alturaMaxCm: data.alturaMaxCm ?? 550,
-    distribuidorId: data.distribuidorId || null,
-    proveedorId: data.proveedorId || null,
   };
+  if (data.fila !== undefined) out.fila = data.fila?.trim() || null;
+  if (data.medidas !== undefined) out.medidas = data.medidas?.trim() || null;
+  if (data.areaM2 !== undefined) out.areaM2 = data.areaM2;
+  if (data.personaContacto !== undefined) out.personaContacto = data.personaContacto?.trim() || null;
+  if (data.telefonoContacto !== undefined) out.telefonoContacto = data.telefonoContacto?.trim() || null;
+  if (data.correoContacto !== undefined) out.correoContacto = data.correoContacto?.trim() || null;
+  if (data.distribuidorId !== undefined) out.distribuidorId = data.distribuidorId || null;
+  if (data.proveedorId !== undefined) out.proveedorId = data.proveedorId || null;
+  return out;
 }
 
 export async function crearEspacio(eventoId: string, x: number, y: number, data: DatosEspacio) {

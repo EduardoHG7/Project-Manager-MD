@@ -198,6 +198,24 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 <td style={{ textAlign: "right" }}>{espacio.distribuidor?.nombre || "—"}</td>
               </tr>
               <tr>
+                <td className="text-muted">Persona de contacto</td>
+                <td style={{ textAlign: "right" }}>{espacio.personaContacto || "—"}</td>
+              </tr>
+              <tr>
+                <td className="text-muted">Teléfono</td>
+                <td style={{ textAlign: "right" }}>{espacio.telefonoContacto || "—"}</td>
+              </tr>
+              <tr>
+                <td className="text-muted">Correo</td>
+                <td style={{ textAlign: "right" }}>
+                  {espacio.correoContacto ? (
+                    <a href={`mailto:${espacio.correoContacto}`}>{espacio.correoContacto}</a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+              </tr>
+              <tr>
                 <td className="text-muted">Montaje</td>
                 <td style={{ textAlign: "right" }}>
                   {fmtFecha(espacio.montajeInicio)} – {fmtFecha(espacio.montajeFin)}

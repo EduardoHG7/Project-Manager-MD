@@ -17,6 +17,9 @@ type Espacio = {
   estado: string;
   x: number | null;
   y: number | null;
+  personaContacto: string | null;
+  telefonoContacto: string | null;
+  correoContacto: string | null;
   distribuidorId: string | null;
   proveedorId: string | null;
 };
@@ -31,6 +34,9 @@ const CAMPOS_VACIOS = {
   medidas: "",
   areaM2: "",
   alturaMaxCm: "550",
+  personaContacto: "",
+  telefonoContacto: "",
+  correoContacto: "",
   distribuidorId: "",
   proveedorId: "",
 };
@@ -72,6 +78,9 @@ export function AdminEspaciosClient({
       medidas: e.medidas || "",
       areaM2: e.areaM2 != null ? String(e.areaM2) : "",
       alturaMaxCm: String(e.alturaMaxCm),
+      personaContacto: e.personaContacto || "",
+      telefonoContacto: e.telefonoContacto || "",
+      correoContacto: e.correoContacto || "",
       distribuidorId: e.distribuidorId || "",
       proveedorId: e.proveedorId || "",
     });
@@ -103,12 +112,15 @@ export function AdminEspaciosClient({
       numero: campos.numero,
       nombre: campos.nombre,
       categoria: campos.categoria,
-      fila: campos.fila || undefined,
-      medidas: campos.medidas || undefined,
-      areaM2: campos.areaM2 ? Number(campos.areaM2) : undefined,
+      fila: campos.fila || null,
+      medidas: campos.medidas || null,
+      areaM2: campos.areaM2 ? Number(campos.areaM2) : null,
       alturaMaxCm: campos.alturaMaxCm ? Number(campos.alturaMaxCm) : undefined,
-      distribuidorId: campos.distribuidorId || undefined,
-      proveedorId: campos.proveedorId || undefined,
+      personaContacto: campos.personaContacto || null,
+      telefonoContacto: campos.telefonoContacto || null,
+      correoContacto: campos.correoContacto || null,
+      distribuidorId: campos.distribuidorId || null,
+      proveedorId: campos.proveedorId || null,
     };
   }
 
@@ -335,6 +347,33 @@ export function AdminEspaciosClient({
                 <div className="field" style={{ flex: 1 }}>
                   <label>Altura máx. cm</label>
                   <input className="input" type="number" value={campos.alturaMaxCm} onChange={(e) => setCampos({ ...campos, alturaMaxCm: e.target.value })} />
+                </div>
+              </div>
+              <div className="field">
+                <label>Persona de contacto</label>
+                <input
+                  className="input"
+                  value={campos.personaContacto}
+                  onChange={(e) => setCampos({ ...campos, personaContacto: e.target.value })}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Teléfono</label>
+                  <input
+                    className="input"
+                    value={campos.telefonoContacto}
+                    onChange={(e) => setCampos({ ...campos, telefonoContacto: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Correo</label>
+                  <input
+                    className="input"
+                    type="email"
+                    value={campos.correoContacto}
+                    onChange={(e) => setCampos({ ...campos, correoContacto: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="field">

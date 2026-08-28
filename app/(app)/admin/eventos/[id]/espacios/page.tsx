@@ -35,6 +35,9 @@ export default async function AdminEspaciosPage({ params }: { params: { id: stri
         estado: e.estado,
         x: e.x,
         y: e.y,
+        personaContacto: e.personaContacto,
+        telefonoContacto: e.telefonoContacto,
+        correoContacto: e.correoContacto,
         distribuidorId: e.distribuidorId,
         proveedorId: e.proveedorId,
       }))}
