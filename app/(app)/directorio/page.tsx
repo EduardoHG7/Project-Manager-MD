@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { SinEvento } from "../_shared/SinEvento";
+import { AgregarStandForm } from "./AgregarStandForm";
 import { DirectorioClient } from "./DirectorioClient";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,14 @@ export default async function DirectorioPage() {
         Expositores, grupos representantes y proveedores de montaje.
         {canEdit && " Haz clic en cualquier celda para editarla."}
       </p>
+
+      {canEdit && (
+        <AgregarStandForm
+          eventoId={evento.id}
+          distribuidores={distribuidores.map((d) => ({ id: d.id, nombre: d.nombre }))}
+          proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}
+        />
+      )}
 
       <DirectorioClient
         canEdit={canEdit}

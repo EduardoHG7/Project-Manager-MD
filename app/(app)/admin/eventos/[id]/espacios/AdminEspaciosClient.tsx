@@ -100,10 +100,7 @@ export function AdminEspaciosClient({
     }
 
     if (modo === "agregar") {
-      setSeleccionadoId(null);
       setPuntoNuevo({ x, y });
-      setCampos(CAMPOS_VACIOS);
-      setError(null);
     }
   }
 
@@ -125,11 +122,10 @@ export function AdminEspaciosClient({
   }
 
   function guardarNuevo() {
-    if (!puntoNuevo) return;
     setError(null);
     startTransition(async () => {
       try {
-        await crearEspacio(eventoId, puntoNuevo.x, puntoNuevo.y, datosDelFormulario());
+        await crearEspacio(eventoId, puntoNuevo?.x ?? null, puntoNuevo?.y ?? null, datosDelFormulario());
         setPuntoNuevo(null);
         setModo("ver");
         setCampos(CAMPOS_VACIOS);
@@ -160,7 +156,7 @@ export function AdminEspaciosClient({
     });
   }
 
-  const form = puntoNuevo || seleccionado;
+  const form = modo === "agregar" || !!seleccionado;
 
   return (
     <main className="page">
@@ -179,6 +175,7 @@ export function AdminEspaciosClient({
               setModo(modo === "agregar" ? "ver" : "agregar");
               setSeleccionadoId(null);
               setPuntoNuevo(null);
+              setCampos(CAMPOS_VACIOS);
               setError(null);
             }}
           >
@@ -187,9 +184,14 @@ export function AdminEspaciosClient({
         </div>
       </div>
 
-      {modo === "agregar" && (
+      {modo === "agregar" && planoUrl && (
         <p className="text-muted" style={{ marginTop: 8 }}>
-          Haz clic en el punto del plano donde va el nuevo espacio.
+          Haz clic en el punto del plano donde va el nuevo espacio, o completa el formulario y guárdalo sin ubicar — puedes colocarlo en el plano después.
+        </p>
+      )}
+      {modo === "agregar" && !planoUrl && (
+        <p className="text-muted" style={{ marginTop: 8 }}>
+          Completa el formulario para crear el stand. Cuando subas el plano del evento podrás ubicarlo ahí.
         </p>
       )}
       {modo === "reposicionar" && (
@@ -311,7 +313,7 @@ export function AdminEspaciosClient({
             </p>
           ) : (
             <>
-              <h6 className="text-muted">{puntoNuevo ? "Nuevo espacio" : `Editando ${seleccionado?.numero}`}</h6>
+              <h6 className="text-muted">{modo === "agregar" ? "Nuevo espacio" : `Editando ${seleccionado?.numero}`}</h6>
               <div style={{ display: "flex", gap: 8 }}>
                 <div className="field" style={{ flex: 1 }}>
                   <label>Número</label>
@@ -410,8 +412,8 @@ export function AdminEspaciosClient({
 
               {error && <p className="error-text">{error}</p>}
 
-              <button className="btn btn-primary btn-block" disabled={isPending} onClick={puntoNuevo ? guardarNuevo : guardarEdicion}>
-                {isPending ? "Guardando…" : puntoNuevo ? "Crear espacio" : "Guardar cambios"}
+              <button className="btn btn-primary btn-block" disabled={isPending} onClick={modo === "agregar" ? guardarNuevo : guardarEdicion}>
+                {isPending ? "Guardando…" : modo === "agregar" ? "Crear espacio" : "Guardar cambios"}
               </button>
 
               {seleccionado && (

@@ -388,7 +388,7 @@ function limpiarDatosEspacio(data: DatosEspacio) {
   return out;
 }
 
-export async function crearEspacio(eventoId: string, x: number, y: number, data: DatosEspacio) {
+export async function crearEspacio(eventoId: string, x: number | null, y: number | null, data: DatosEspacio) {
   await requireAdmin();
   if (!data.numero.trim() || !data.nombre.trim()) {
     throw new Error("Número y nombre son obligatorios.");
