@@ -15,6 +15,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|plano|uploads).*)",
+    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|plano|uploads|logo-magicdreams.png).*)",
   ],
 };

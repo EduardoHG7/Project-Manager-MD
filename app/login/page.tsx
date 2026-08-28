@@ -33,7 +33,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="login-shell">
+    <div className="login-shell" style={{ flexDirection: "column", gap: 24 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-magicdreams.png" alt="Magic Dreams Productions" style={{ height: 56, display: "block" }} />
       <form className="login-card elev-lg" onSubmit={onSubmit}>
         <div>
           <h6 style={{ color: "var(--color-accent)" }}>Supervisión de montaje</h6>
