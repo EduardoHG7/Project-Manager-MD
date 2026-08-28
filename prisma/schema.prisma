@@ -29,6 +29,7 @@ model Usuario {
   visitas          VisitaProgramada[]
   versionesSubidas   VersionEntrega[] @relation("VersionSubidaPor")
   versionesRevisadas VersionEntrega[] @relation("VersionRevisadaPor")
+  comentarios        ComentarioEspacio[]
 
   @@map("usuarios")
 }
@@ -126,6 +127,7 @@ model Espacio {
   mediciones      Medicion[]
   incumplimientos Incumplimiento[]
   visitas         VisitaProgramada[]
+  comentarios     ComentarioEspacio[]
   usuario         Usuario? @relation("EspacioUsuario")
 
   @@unique([eventoId, numero])
@@ -175,6 +177,23 @@ model VersionEntrega {
   revisadoPor Usuario? @relation("VersionRevisadaPor", fields: [revisadoPorId], references: [id])
 
   @@map("versiones_entrega")
+}
+
+// ── Bitácora de comentarios del stand (cliente, ajustes, notas) ──
+// Solo se agrega (no se edita ni se borra): es un historial con quién
+// escribió cada comentario y cuándo.
+model ComentarioEspacio {
+  id        String   @id @default(cuid())
+  espacioId String
+  texto     String
+  autorId   String?
+  autor     String?  // nombre para mostrar (respaldo si no hay autorId)
+  fecha     DateTime @default(now())
+
+  espacio Espacio  @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  usuario Usuario? @relation(fields: [autorId], references: [id])
+
+  @@map("comentarios_espacio")
 }
 
 // ── Checklist de materiales/acabados de la ficha de stand ─────────

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFecha, fmtFechaHora } from "@/lib/estados";
 import { GaleriaArchivos } from "@/components/GaleriaArchivos";
+import { ComentariosEspacio } from "./ComentariosEspacio";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
@@ -45,6 +46,7 @@ export default async function FichaStandPage({ params }: { params: { numero: str
       materiales: { orderBy: { orden: "asc" } },
       pins: true,
       incumplimientos: { where: { estado: { not: "CERRADA" } } },
+      comentarios: { orderBy: { fecha: "desc" } },
     },
   });
   if (!espacio) notFound();
@@ -143,6 +145,20 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 </p>
               );
             })()}
+
+          <h6 className="text-muted" style={{ marginTop: 28 }}>
+            Comentarios
+          </h6>
+          <ComentariosEspacio
+            espacioId={espacio.id}
+            canEdit={canEdit}
+            comentarios={espacio.comentarios.map((c) => ({
+              id: c.id,
+              texto: c.texto,
+              autor: c.autor,
+              fecha: c.fecha.toISOString(),
+            }))}
+          />
         </section>
 
         <aside>

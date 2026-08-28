@@ -133,6 +133,16 @@ export async function guardarMaterial(
   revalidatePath("/espacios");
 }
 
+export async function agregarComentarioEspacio(espacioId: string, texto: string) {
+  const session = await requireEditor();
+  const t = texto.trim();
+  if (!t) throw new Error("El comentario no puede estar vacío.");
+  await prisma.comentarioEspacio.create({
+    data: { espacioId, texto: t, autorId: session.user.id, autor: session.user.name || undefined },
+  });
+  revalidatePath("/espacios");
+}
+
 export async function agregarPin(
   espacioId: string,
   data: { x: number; y: number; elemento: string; nota?: string }
