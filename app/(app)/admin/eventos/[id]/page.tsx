@@ -81,6 +81,27 @@ export default async function EditarEventoPage({ params }: { params: { id: strin
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: 8 }}>
+          <div className="field" style={{ flex: 1 }}>
+            <label htmlFor="pausaInicio">Pausa (cerrado al público) desde</label>
+            <input className="input" id="pausaInicio" name="pausaInicio" type="date" defaultValue={paraInput(evento.pausaInicio)} />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label htmlFor="pausaFin">Pausa hasta</label>
+            <input className="input" id="pausaFin" name="pausaFin" type="date" defaultValue={paraInput(evento.pausaFin)} />
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="horariosNota">Horarios de atención al público</label>
+          <textarea
+            className="input"
+            id="horariosNota"
+            name="horariosNota"
+            placeholder="Ej. Jueves y viernes 2:00pm a 9:00pm, sábado 12:00m-9:00pm, domingo 12:00m-7:00pm"
+            defaultValue={evento.horariosNota || ""}
+          />
+        </div>
+
         {evento.planoUrl && (
           <div className="field">
             <label>Plano actual</label>

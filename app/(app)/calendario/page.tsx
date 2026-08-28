@@ -53,6 +53,8 @@ export default async function CalendarioPage() {
     if (evento.montajeInicio && diffDias(evento.montajeInicio, d) === 0) return "Inicia montaje";
     if (evento.montajeFin && diffDias(evento.montajeFin, d) === 0) return "Cierre montaje";
     if (diffDias(evento.fechaInicio, d) === 0) return "Apertura";
+    if (evento.pausaInicio && diffDias(evento.pausaInicio, d) === 0) return "Pausa";
+    if (evento.pausaFin && diffDias(addDias(evento.pausaFin, 1), d) === 0) return "Reapertura";
     if (diffDias(evento.fechaFin, d) === 0) return "Cierre";
     if (evento.desmontajeInicio && diffDias(evento.desmontajeInicio, d) === 0) return "Desmontaje";
     return "";
@@ -65,6 +67,11 @@ export default async function CalendarioPage() {
         {inicio.toLocaleDateString("es-PA", { day: "2-digit", month: "short" })} –{" "}
         {fin.toLocaleDateString("es-PA", { day: "2-digit", month: "short" })}
       </h2>
+      {evento.horariosNota && (
+        <p className="text-muted" style={{ fontSize: 13, marginTop: 4, whiteSpace: "pre-wrap" }}>
+          {evento.horariosNota}
+        </p>
+      )}
 
       <div style={{ display: "flex", gap: 16, margin: "16px 0", fontSize: 12 }}>
         {[

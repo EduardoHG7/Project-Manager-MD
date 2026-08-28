@@ -293,6 +293,9 @@ export async function crearEvento(formData: FormData) {
       montajeFin: parseFechaOpcional(formData.get("montajeFin")),
       desmontajeInicio: parseFechaOpcional(formData.get("desmontajeInicio")),
       desmontajeFin: parseFechaOpcional(formData.get("desmontajeFin")),
+      pausaInicio: parseFechaOpcional(formData.get("pausaInicio")),
+      pausaFin: parseFechaOpcional(formData.get("pausaFin")),
+      horariosNota: String(formData.get("horariosNota") || "").trim() || null,
       planoUrl,
     },
   });
@@ -316,6 +319,9 @@ export async function actualizarEvento(id: string, formData: FormData) {
     montajeFin: parseFechaOpcional(formData.get("montajeFin")),
     desmontajeInicio: parseFechaOpcional(formData.get("desmontajeInicio")),
     desmontajeFin: parseFechaOpcional(formData.get("desmontajeFin")),
+    pausaInicio: parseFechaOpcional(formData.get("pausaInicio")),
+    pausaFin: parseFechaOpcional(formData.get("pausaFin")),
+    horariosNota: String(formData.get("horariosNota") || "").trim() || null,
   };
 
   const plano = formData.get("plano");

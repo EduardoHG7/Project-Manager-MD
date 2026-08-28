@@ -45,6 +45,9 @@ model Evento {
   montajeFin      DateTime?
   desmontajeInicio DateTime?
   desmontajeFin   DateTime?
+  pausaInicio     DateTime? // días cerrado al público en medio del evento (ej. entre dos tandas de apertura)
+  pausaFin        DateTime?
+  horariosNota    String?   // texto libre con el horario de atención al público
   planoUrl        String?
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
