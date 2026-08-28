@@ -133,6 +133,22 @@ export async function guardarMaterial(
   revalidatePath("/espacios");
 }
 
+export async function actualizarContactoEspacio(
+  espacioId: string,
+  data: { personaContacto?: string; telefonoContacto?: string; correoContacto?: string }
+) {
+  await requireEditor();
+  await prisma.espacio.update({
+    where: { id: espacioId },
+    data: {
+      personaContacto: data.personaContacto?.trim() || null,
+      telefonoContacto: data.telefonoContacto?.trim() || null,
+      correoContacto: data.correoContacto?.trim() || null,
+    },
+  });
+  revalidatePath("/espacios");
+}
+
 export async function agregarComentarioEspacio(espacioId: string, texto: string) {
   const session = await requireEditor();
   const t = texto.trim();

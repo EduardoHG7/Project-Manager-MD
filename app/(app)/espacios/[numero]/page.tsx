@@ -7,6 +7,7 @@ import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFecha, fmtFechaHora } from "@/lib/estados";
 import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 import { ComentariosEspacio } from "./ComentariosEspacio";
+import { ContactoEspacio } from "./ContactoEspacio";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
@@ -197,24 +198,13 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 <td className="text-muted">Grupo</td>
                 <td style={{ textAlign: "right" }}>{espacio.distribuidor?.nombre || "—"}</td>
               </tr>
-              <tr>
-                <td className="text-muted">Persona de contacto</td>
-                <td style={{ textAlign: "right" }}>{espacio.personaContacto || "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Teléfono</td>
-                <td style={{ textAlign: "right" }}>{espacio.telefonoContacto || "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Correo</td>
-                <td style={{ textAlign: "right" }}>
-                  {espacio.correoContacto ? (
-                    <a href={`mailto:${espacio.correoContacto}`}>{espacio.correoContacto}</a>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-              </tr>
+              <ContactoEspacio
+                espacioId={espacio.id}
+                canEdit={canEdit}
+                personaContacto={espacio.personaContacto}
+                telefonoContacto={espacio.telefonoContacto}
+                correoContacto={espacio.correoContacto}
+              />
               <tr>
                 <td className="text-muted">Montaje</td>
                 <td style={{ textAlign: "right" }}>
