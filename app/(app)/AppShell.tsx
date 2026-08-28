@@ -39,6 +39,10 @@ export function AppShell({
   return (
     <div>
       <header className="shell-header" style={{ flexDirection: "column", alignItems: "stretch", gap: 10 }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-magicdreams.png" alt="Magic Dreams Productions" style={{ height: 40, display: "block" }} />
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
           <div className="shell-brand" style={{ marginRight: 0 }}>
             Supervisión de montaje
