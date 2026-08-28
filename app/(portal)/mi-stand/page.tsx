@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ESTADO_LABEL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFechaHora } from "@/lib/estados";
+import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 import { SubirVersionForm } from "./SubirVersionForm";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,17 @@ export default async function MiStandPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 380px", gap: 28, marginTop: 20, alignItems: "start" }}>
         <div>
-          <h6 className="text-muted">Historial de versiones</h6>
+          {ultima && (ultima.renderUrls.length > 0 || ultima.mapaUrl) && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h6 className="text-muted">Render actual · {ultima.version}</h6>
+                <span className={`pill ${VERSION_ESTADO_PILL[ultima.estado]}`}>{VERSION_ESTADO_LABEL[ultima.estado]}</span>
+              </div>
+              <GaleriaArchivos renderUrls={ultima.renderUrls} mapaUrl={ultima.mapaUrl} />
+            </>
+          )}
+
+          <h6 className="text-muted" style={{ marginTop: 28 }}>Historial de versiones</h6>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {espacio.versiones.length === 0 && (
               <p className="text-muted">Todavía no has subido ningún render.</p>

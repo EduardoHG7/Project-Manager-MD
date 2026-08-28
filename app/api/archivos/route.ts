@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(blobUrl, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok || !res.body) {
-    return new Response("No se pudo obtener el archivo.", { status: res.status === 404 ? 404 : 502 });
+    const detalle = await res.text().catch(() => "");
+    console.error("GET /api/archivos falló", { url: blobUrl.toString(), status: res.status, detalle });
+    return new Response(`No se pudo obtener el archivo (status ${res.status}): ${detalle}`, {
+      status: res.status === 404 ? 404 : 502,
+    });
   }
 
   return new Response(res.body, {

@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { decidirVersion } from "@/lib/actions";
-import { VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFechaHora } from "@/lib/estados";
+import { VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, fmtFechaHora } from "@/lib/estados";
+import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 
 type VersionItem = {
   id: string;
@@ -21,51 +22,6 @@ type VersionItem = {
   revisadoEn: string | null;
   comentario: string | null;
 };
-
-function Miniatura({ url, alt }: { url: string; alt: string }) {
-  if (esPdf(url)) {
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="text-muted"
-        style={{
-          width: 110,
-          height: 80,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 4,
-          fontSize: 11,
-          border: "1px solid var(--color-divider)",
-          textAlign: "center",
-        }}
-      >
-        📄 Ver PDF
-      </a>
-    );
-  }
-  return (
-    <a href={url} target="_blank" rel="noreferrer">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt={alt} style={{ width: 110, height: 80, objectFit: "cover", border: "1px solid var(--color-divider)" }} />
-    </a>
-  );
-}
-
-function Miniaturas({ v }: { v: VersionItem }) {
-  return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      {v.renderUrls.map((url, i) => (
-        <Miniatura key={url} url={url} alt={`Render ${i + 1}`} />
-      ))}
-      {v.mapaUrl && <Miniatura url={v.mapaUrl} alt="Plano" />}
-      {v.renderUrls.length === 0 && !v.mapaUrl && <span className="text-muted" style={{ fontSize: 12 }}>Sin archivos</span>}
-    </div>
-  );
-}
 
 function TarjetaPendiente({ v, canEdit }: { v: VersionItem; canEdit: boolean }) {
   const router = useRouter();
@@ -88,7 +44,7 @@ function TarjetaPendiente({ v, canEdit }: { v: VersionItem; canEdit: boolean }) 
         <span className={`pill ${VERSION_ESTADO_PILL[v.estado]}`}>{VERSION_ESTADO_LABEL[v.estado]}</span>
       </div>
 
-      <Miniaturas v={v} />
+      <GaleriaArchivos renderUrls={v.renderUrls} mapaUrl={v.mapaUrl} />
       {v.nota && <p style={{ fontSize: 13, margin: "6px 0 0" }}>{v.nota}</p>}
 
       {canEdit && (

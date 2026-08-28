@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, esPdf, fmtFecha, fmtFechaHora } from "@/lib/estados";
+import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
@@ -70,7 +71,21 @@ export default async function FichaStandPage({ params }: { params: { numero: str
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 32, marginTop: 24 }}>
         <section>
-          <h6 className="text-muted">Progreso por disciplina</h6>
+          {espacio.versiones[0] && (espacio.versiones[0].renderUrls.length > 0 || espacio.versiones[0].mapaUrl) && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h6 className="text-muted">
+                  Render actual · {espacio.versiones[0].version}
+                </h6>
+                <span className={`pill ${VERSION_ESTADO_PILL[espacio.versiones[0].estado]}`}>
+                  {VERSION_ESTADO_LABEL[espacio.versiones[0].estado] || espacio.versiones[0].estado}
+                </span>
+              </div>
+              <GaleriaArchivos renderUrls={espacio.versiones[0].renderUrls} mapaUrl={espacio.versiones[0].mapaUrl} />
+            </>
+          )}
+
+          <h6 className="text-muted" style={{ marginTop: 28 }}>Progreso por disciplina</h6>
           <EtapasEditor espacioId={espacio.id} etapas={espacio.etapas} canEdit={canEdit} />
 
           <h6 className="text-muted" style={{ marginTop: 28 }}>
