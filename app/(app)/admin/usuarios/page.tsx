@@ -3,10 +3,19 @@ import { UsuariosClient } from "./UsuariosClient";
 
 export const dynamic = "force-dynamic";
 
+const ORDEN_ROL: Record<string, number> = { ADMIN: 0, SUPERVISOR: 1, LECTURA: 2 };
+
 export default async function AdminUsuariosPage() {
-  const usuarios = await prisma.usuario.findMany({
+  const usuariosDb = await prisma.usuario.findMany({
     where: { rol: { in: ["ADMIN", "SUPERVISOR", "LECTURA"] } },
-    orderBy: [{ rol: "asc" }, { nombre: "asc" }],
+    orderBy: { nombre: "asc" },
+  });
+
+  const usuarios = [...usuariosDb].sort((a, b) => {
+    const rol = (ORDEN_ROL[a.rol] ?? 99) - (ORDEN_ROL[b.rol] ?? 99);
+    if (rol !== 0) return rol;
+    if (a.activo !== b.activo) return a.activo ? -1 : 1;
+    return a.nombre.localeCompare(b.nombre);
   });
 
   return (
