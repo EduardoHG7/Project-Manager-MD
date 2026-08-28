@@ -34,8 +34,8 @@ async function requireAdmin() {
 }
 
 // Expositor solo puede subir para su propio espacio; operación (admin/supervisor)
-// puede subir en nombre de cualquier espacio, indicando espacioId en el formData.
-async function resolverEspacioParaSubida(formData: FormData) {
+// puede subir en nombre de cualquier espacio, indicando espacioId explícitamente.
+async function resolverEspacioParaSubida(espacioIdInput?: string) {
   const session = await getServerSession(authOptions);
   const rol = session?.user?.rol;
 
@@ -48,9 +48,8 @@ async function resolverEspacioParaSubida(formData: FormData) {
   }
 
   if (rol === "ADMIN" || rol === "SUPERVISOR") {
-    const espacioId = String(formData.get("espacioId") || "");
-    if (!espacioId) throw new Error("Falta el espacio.");
-    return { session: session!, espacioId };
+    if (!espacioIdInput) throw new Error("Falta el espacio.");
+    return { session: session!, espacioId: espacioIdInput };
   }
 
   throw new Error("No autorizado.");
@@ -492,8 +491,8 @@ export async function regenerarContrasenaUsuario(id: string) {
 
 // ── Flujo de renders: subir (expositor) / aprobar-rechazar (operación) ─
 
-export async function subirVersion(formData: FormData) {
-  const { session, espacioId } = await resolverEspacioParaSubida(formData);
+export async function subirVersion(data: { espacioId?: string; renderUrls: string[]; mapaUrl?: string; nota?: string }) {
+  const { session, espacioId } = await resolverEspacioParaSubida(data.espacioId);
 
   const ultima = await prisma.versionEntrega.findFirst({
     where: { espacioId },
@@ -506,35 +505,21 @@ export async function subirVersion(formData: FormData) {
         : "Ya hay una versión en revisión. Espera a que se apruebe o se rechace antes de subir otra."
     );
   }
+  if (data.renderUrls.length === 0) {
+    throw new Error("Debes adjuntar al menos una imagen o PDF del render.");
+  }
 
   const numeroAnterior = ultima ? parseInt(ultima.version.replace(/\D/g, ""), 10) || 0 : 0;
   const version = `v${numeroAnterior + 1}`;
-
-  const renders = formData.getAll("render").filter((f): f is File => f instanceof File && f.size > 0);
-  if (renders.length === 0) {
-    throw new Error("Debes adjuntar al menos una imagen o PDF del render.");
-  }
-  const renderUrls: string[] = [];
-  for (const render of renders) {
-    renderUrls.push(await guardarArchivo(render, "renders"));
-  }
-
-  let mapaUrl: string | undefined;
-  const mapa = formData.get("mapa");
-  if (mapa instanceof File && mapa.size > 0) {
-    mapaUrl = await guardarArchivo(mapa, "renders");
-  }
-
-  const nota = String(formData.get("nota") || "").trim() || undefined;
 
   await prisma.versionEntrega.create({
     data: {
       espacioId,
       version,
       estado: "PENDIENTE",
-      renderUrls,
-      mapaUrl,
-      nota,
+      renderUrls: data.renderUrls,
+      mapaUrl: data.mapaUrl,
+      nota: data.nota?.trim() || undefined,
       autor: session.user.name || undefined,
       subidoPorId: session.user.id,
     },
