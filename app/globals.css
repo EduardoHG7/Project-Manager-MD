@@ -122,6 +122,8 @@ textarea.input { min-height: 80px; resize: vertical; }
 .pill-red { background: var(--color-accent); color: #fff; }
 .pill-out { background: transparent; border: 1px solid var(--color-text); color: var(--color-text); }
 .pill-ghost { background: transparent; border: 1px dashed var(--color-neutral-500); color: rgba(32,30,29,.6); }
+.pill-yellow { background: #f2c230; color: #201e1d; }
+.pill-green { background: #1f8a4d; color: #fff; }
 
 /* — nav / shell — */
 .shell-header {

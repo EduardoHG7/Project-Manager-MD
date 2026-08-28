@@ -28,9 +28,9 @@ export const ESTADO_FILL: Record<string, string> = {
 };
 
 export const ESTADO_PILL: Record<string, string> = {
-  SIN_RENDER: "pill-ghost",
-  EN_REVISION: "pill-soft",
-  APROBADO: "pill-soft",
+  SIN_RENDER: "pill-red",
+  EN_REVISION: "pill-yellow",
+  APROBADO: "pill-green",
   EN_FABRICACION: "pill-soft",
   MONTADO: "pill-out",
   VERIFICADO: "pill-ink",
