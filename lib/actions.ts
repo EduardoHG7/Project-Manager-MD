@@ -132,6 +132,29 @@ export async function asignarSupervisorEspacio(espacioId: string, supervisorId: 
   revalidatePath("/tablero");
 }
 
+// Cambia el número del stand. Como la Ficha de stand vive en /espacios/[numero],
+// quien llama esto debe redirigir a la nueva URL si la operación tiene éxito.
+export async function actualizarNumeroEspacio(espacioId: string, nuevoNumero: string) {
+  await requireEditor();
+  const n = nuevoNumero.trim();
+  if (!n) throw new Error("El número no puede quedar vacío.");
+
+  const actual = await prisma.espacio.findUnique({ where: { id: espacioId }, select: { eventoId: true, numero: true } });
+  if (!actual) throw new Error("Espacio no encontrado.");
+  if (n === actual.numero) return n;
+
+  const existe = await prisma.espacio.findUnique({ where: { eventoId_numero: { eventoId: actual.eventoId, numero: n } } });
+  if (existe) throw new Error(`Ya existe un espacio con el número "${n}".`);
+
+  await prisma.espacio.update({ where: { id: espacioId }, data: { numero: n } });
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/calendario");
+  return n;
+}
+
 export async function actualizarEtapa(espacioId: string, disciplina: string, estado: string, detalle?: string) {
   await requireEditor();
   await prisma.espacioEtapa.upsert({
@@ -568,11 +591,16 @@ export async function eliminarEspacio(id: string) {
 // ── Admin: distribuidores y proveedores ──────────────────────────────
 
 export async function crearDistribuidor(nombre: string) {
-  await requireAdmin();
+  // Admin y Supervisor pueden registrar un nuevo grupo/representante al vuelo
+  // (por ejemplo, desde la Ficha de stand); solo Admin puede eliminarlos.
+  await requireEditor();
   const n = nombre.trim();
   if (!n) throw new Error("El nombre es obligatorio.");
-  await prisma.distribuidor.upsert({ where: { nombre: n }, update: {}, create: { nombre: n } });
+  const distribuidor = await prisma.distribuidor.upsert({ where: { nombre: n }, update: {}, create: { nombre: n } });
   revalidatePath("/admin/distribuidores");
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  return distribuidor;
 }
 
 export async function eliminarDistribuidor(id: string) {

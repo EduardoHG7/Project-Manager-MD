@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { actualizarEspacio } from "@/lib/actions";
+import { useRouter } from "next/navigation";
+import { actualizarEspacio, actualizarNumeroEspacio, crearDistribuidor } from "@/lib/actions";
 import { fmtFecha } from "@/lib/estados";
 
 type Opcion = { id: string; nombre: string };
 
+const NUEVO_GRUPO = "__nuevo__";
+
 export function EspecificacionesEspacio({
   espacioId,
+  numero,
   canEdit,
   medidas,
   areaM2,
@@ -26,6 +30,7 @@ export function EspecificacionesEspacio({
   distribuidores,
 }: {
   espacioId: string;
+  numero: string;
   canEdit: boolean;
   medidas: string | null;
   areaM2: number | null;
@@ -43,6 +48,7 @@ export function EspecificacionesEspacio({
   proveedores: Opcion[];
   distribuidores: Opcion[];
 }) {
+  const router = useRouter();
   const [campos, setCampos] = useState({
     medidas: medidas || "",
     areaM2: areaM2 ?? "",
@@ -58,14 +64,60 @@ export function EspecificacionesEspacio({
   });
   const [isPending, startTransition] = useTransition();
 
+  const [numeroInput, setNumeroInput] = useState(numero);
+  const [numeroError, setNumeroError] = useState<string | null>(null);
+  const [isPendingNumero, startNumeroTransition] = useTransition();
+
+  const [creandoGrupo, setCreandoGrupo] = useState(false);
+  const [nuevoGrupoNombre, setNuevoGrupoNombre] = useState("");
+  const [grupoError, setGrupoError] = useState<string | null>(null);
+  const [isPendingGrupo, startGrupoTransition] = useTransition();
+
   function guardar(cambios: Record<string, string | number>) {
     setCampos((prev) => ({ ...prev, ...cambios }));
     startTransition(() => actualizarEspacio(espacioId, cambios));
   }
 
+  function guardarNumero() {
+    setNumeroError(null);
+    const n = numeroInput.trim();
+    if (n === numero) return;
+    startNumeroTransition(async () => {
+      try {
+        const nuevo = await actualizarNumeroEspacio(espacioId, n);
+        router.push(`/espacios/${encodeURIComponent(nuevo)}`);
+        router.refresh();
+      } catch (err: any) {
+        setNumeroInput(numero);
+        setNumeroError(err?.message || "No se pudo cambiar el número.");
+      }
+    });
+  }
+
+  function crearGrupo() {
+    setGrupoError(null);
+    const n = nuevoGrupoNombre.trim();
+    if (!n) return;
+    startGrupoTransition(async () => {
+      try {
+        const grupo = await crearDistribuidor(n);
+        setCreandoGrupo(false);
+        setNuevoGrupoNombre("");
+        guardar({ distribuidorId: grupo.id });
+        router.refresh();
+      } catch (err: any) {
+        setGrupoError(err?.message || "No se pudo crear el grupo.");
+      }
+    });
+  }
+
   if (!canEdit) {
     return (
       <>
+        <tr>
+          <td className="text-muted">Número de stand</td>
+          <td style={{ textAlign: "right" }}>{numero}</td>
+        </tr>
         <tr>
           <td className="text-muted">Medidas en planta</td>
           <td style={{ textAlign: "right" }}>{medidas || "—"}</td>
@@ -114,6 +166,23 @@ export function EspecificacionesEspacio({
 
   return (
     <>
+      <tr>
+        <td className="text-muted">Número de stand</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            style={{ textAlign: "right" }}
+            value={numeroInput}
+            disabled={isPendingNumero}
+            onChange={(e) => setNumeroInput(e.target.value)}
+            onBlur={guardarNumero}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+          {numeroError && <p className="error-text" style={{ fontSize: 11, margin: "4px 0 0" }}>{numeroError}</p>}
+        </td>
+      </tr>
       <tr>
         <td className="text-muted">Medidas en planta</td>
         <td style={{ textAlign: "right" }}>
@@ -227,20 +296,60 @@ export function EspecificacionesEspacio({
       <tr>
         <td className="text-muted">Grupo</td>
         <td style={{ textAlign: "right" }}>
-          <select
-            className="input"
-            style={{ textAlign: "right" }}
-            value={campos.distribuidorId}
-            disabled={isPending}
-            onChange={(e) => guardar({ distribuidorId: e.target.value })}
-          >
-            <option value="">— Sin asignar —</option>
-            {distribuidores.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nombre}
-              </option>
-            ))}
-          </select>
+          {creandoGrupo ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
+              <div style={{ display: "flex", gap: 4 }}>
+                <input
+                  className="input"
+                  autoFocus
+                  placeholder="Nombre del nuevo grupo"
+                  value={nuevoGrupoNombre}
+                  disabled={isPendingGrupo}
+                  onChange={(e) => setNuevoGrupoNombre(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") crearGrupo();
+                  }}
+                />
+                <button className="btn btn-secondary" disabled={isPendingGrupo} onClick={crearGrupo}>
+                  {isPendingGrupo ? "…" : "Crear"}
+                </button>
+                <button
+                  className="btn-ghost"
+                  disabled={isPendingGrupo}
+                  onClick={() => {
+                    setCreandoGrupo(false);
+                    setNuevoGrupoNombre("");
+                    setGrupoError(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+              {grupoError && <p className="error-text" style={{ fontSize: 11, margin: 0 }}>{grupoError}</p>}
+            </div>
+          ) : (
+            <select
+              className="input"
+              style={{ textAlign: "right" }}
+              value={campos.distribuidorId}
+              disabled={isPending}
+              onChange={(e) => {
+                if (e.target.value === NUEVO_GRUPO) {
+                  setCreandoGrupo(true);
+                } else {
+                  guardar({ distribuidorId: e.target.value });
+                }
+              }}
+            >
+              <option value="">— Sin asignar —</option>
+              {distribuidores.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nombre}
+                </option>
+              ))}
+              <option value={NUEVO_GRUPO}>+ Nuevo grupo…</option>
+            </select>
+          )}
         </td>
       </tr>
       <tr>

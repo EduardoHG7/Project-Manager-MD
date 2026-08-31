@@ -187,6 +187,7 @@ export default async function FichaStandPage({ params }: { params: { numero: str
             <tbody>
               <EspecificacionesEspacio
                 espacioId={espacio.id}
+                numero={espacio.numero}
                 canEdit={canEdit}
                 medidas={espacio.medidas}
                 areaM2={espacio.areaM2}
