@@ -63,7 +63,7 @@ export function VistaCalendario({
         return (
           <div key={`${anio}-${mes}`} className="card elev-sm">
             <h6 style={{ margin: "0 0 10px", textTransform: "capitalize" }}>{nombreMes}</h6>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, background: "var(--color-divider)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, background: "var(--color-divider-strong)" }}>
               {DIAS_SEMANA.map((d) => (
                 <div key={d} className="text-muted" style={{ background: "var(--color-bg)", padding: "4px 6px", fontSize: 10.5, fontWeight: 700, textAlign: "center" }}>
                   {d}
