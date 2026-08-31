@@ -12,6 +12,7 @@ type Actividad = {
   tipo: string;
   descripcion: string | null;
   creadoPorNombre: string | null;
+  color: string;
 };
 
 const CAMPOS_VACIOS = { titulo: "", fecha: "", hora: "", tipo: "REUNION", descripcion: "" };
@@ -161,7 +162,14 @@ export function ActividadesCalendario({ eventoId, canEdit, actividades }: { even
               <div
                 key={a.id}
                 className="card"
-                style={{ opacity: pasada ? 0.6 : 1, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}
+                style={{
+                  opacity: pasada ? 0.6 : 1,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  alignItems: "flex-start",
+                  borderLeft: `4px solid ${a.color}`,
+                }}
               >
                 <div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

@@ -6,6 +6,21 @@ import { ESTADO_FILL } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
 import { EditarCronograma } from "./EditarCronograma";
 import { ActividadesCalendario } from "./ActividadesCalendario";
+import { VistaCalendario } from "./VistaCalendario";
+
+// Colores para distinguir cada reunión/actividad entre sí (se asignan por orden).
+const PALETA_ACTIVIDADES = [
+  "#0f766e",
+  "#4338ca",
+  "#b45309",
+  "#be185d",
+  "#0e7490",
+  "#4d7c0f",
+  "#9333ea",
+  "#475569",
+  "#c2410c",
+  "#0369a1",
+];
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +59,7 @@ export default async function CalendarioPage() {
     include: { creadoPor: true },
     orderBy: { fecha: "asc" },
   });
-  const actividades = actividadesDb.map((a) => ({
+  const actividades = actividadesDb.map((a, i) => ({
     id: a.id,
     titulo: a.titulo,
     fecha: toISO(a.fecha)!,
@@ -52,11 +67,12 @@ export default async function CalendarioPage() {
     tipo: a.tipo,
     descripcion: a.descripcion,
     creadoPorNombre: a.creadoPor?.nombre ?? null,
+    color: PALETA_ACTIVIDADES[i % PALETA_ACTIVIDADES.length],
   }));
 
-  // El cronograma cubre desde la fecha más temprana hasta la más tardía entre
-  // las fechas fijas del evento (montaje, apertura, pausa, desmontaje) y las
-  // reuniones/actividades registradas, para que todo aparezca en la línea de tiempo.
+  // El calendario mensual cubre desde la fecha más temprana hasta la más tardía
+  // entre las fechas fijas del evento (montaje, apertura, pausa, desmontaje) y
+  // las reuniones/actividades registradas, para que todo aparezca ahí.
   const fechasClave = [
     evento.montajeInicio,
     evento.montajeFin,
@@ -70,18 +86,17 @@ export default async function CalendarioPage() {
   ].filter((d): d is Date => d != null);
   const inicio = new Date(Math.min(...fechasClave.map((d) => d.getTime())));
   const fin = new Date(Math.max(...fechasClave.map((d) => d.getTime())));
-  const totalDias = Math.max(1, diffDias(inicio, fin) + 1);
 
-  const actividadesPorDia = new Map<string, typeof actividades>();
-  for (const a of actividades) {
-    if (!actividadesPorDia.has(a.fecha)) actividadesPorDia.set(a.fecha, []);
-    actividadesPorDia.get(a.fecha)!.push(a);
-  }
+  // El Gantt de progreso por stand usa solo el rango del evento (sin las
+  // reuniones), para no diluir las barras en meses sin montaje.
+  const progresoInicio = evento.montajeInicio || evento.fechaInicio;
+  const progresoFin = evento.desmontajeFin || evento.fechaFin;
+  const progresoTotalDias = Math.max(1, diffDias(progresoInicio, progresoFin) + 1);
 
   const hoy = new Date();
 
   function pct(d: Date) {
-    return Math.min(100, Math.max(0, (diffDias(inicio, d) / totalDias) * 100));
+    return Math.min(100, Math.max(0, (diffDias(progresoInicio, d) / progresoTotalDias) * 100));
   }
   function segment(desde: Date | null, hasta: Date | null) {
     if (!desde || !hasta) return null;
@@ -90,7 +105,7 @@ export default async function CalendarioPage() {
     return { left, width };
   }
 
-  const dias = Array.from({ length: totalDias }, (_, i) => addDias(inicio, i));
+  const diasProgreso = Array.from({ length: progresoTotalDias }, (_, i) => addDias(progresoInicio, i));
   const milestone = (d: Date) => {
     if (evento.montajeInicio && diffDias(evento.montajeInicio, d) === 0) return "Inicia montaje";
     if (evento.montajeFin && diffDias(evento.montajeFin, d) === 0) return "Cierre montaje";
@@ -132,7 +147,12 @@ export default async function CalendarioPage() {
         />
       )}
 
-      <div style={{ display: "flex", gap: 16, margin: "16px 0", fontSize: 12 }}>
+      <VistaCalendario inicio={inicio} fin={fin} hoy={hoy} milestone={milestone} actividades={actividades} />
+
+      <h6 className="text-muted" style={{ marginTop: 28 }}>
+        Progreso de montaje por stand
+      </h6>
+      <div style={{ display: "flex", gap: 16, margin: "8px 0 16px", fontSize: 12 }}>
         {[
           ["En fabricación", "EN_FABRICACION"],
           ["Montaje", "MONTADO"],
@@ -150,10 +170,10 @@ export default async function CalendarioPage() {
       </div>
 
       <div className="table-wrap">
-        <div style={{ minWidth: Math.max(720, 160 + totalDias * 34) }}>
-          <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, minmax(34px, 1fr))` }}>
+        <div style={{ minWidth: Math.max(720, 160 + progresoTotalDias * 34) }}>
+          <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${progresoTotalDias}, minmax(34px, 1fr))` }}>
             <div />
-            {dias.map((d, i) => (
+            {diasProgreso.map((d, i) => (
               <div
                 key={i}
                 style={{
@@ -169,48 +189,24 @@ export default async function CalendarioPage() {
               </div>
             ))}
             <div style={{ fontSize: 10, color: "var(--color-text)", padding: "6px 0" }} />
-            {dias.map((d, i) => {
+            {diasProgreso.map((d, i) => {
               const label = milestone(d);
-              const acts = actividadesPorDia.get(toISO(d)!) || [];
               return (
-                <div key={i} style={{ borderRight: "1px solid var(--color-divider)" }}>
-                  {label && (
-                    <div
-                      style={{
-                        padding: "8px 4px",
-                        fontSize: 9,
-                        fontWeight: 800,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                        textAlign: "center",
-                        background: "var(--color-neutral-900)",
-                        color: "var(--color-bg)",
-                      }}
-                    >
-                      {label}
-                    </div>
-                  )}
-                  {acts.map((a) => (
-                    <div
-                      key={a.id}
-                      title={`${a.titulo}${a.hora ? " · " + a.hora : ""}`}
-                      style={{
-                        padding: "3px 3px",
-                        marginTop: label ? 2 : 0,
-                        fontSize: 8,
-                        fontWeight: 700,
-                        textAlign: "center",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        background: a.tipo === "OTRO" ? "transparent" : "var(--color-neutral-200)",
-                        border: a.tipo === "OTRO" ? "1px dashed var(--color-neutral-500)" : "1px solid var(--color-divider)",
-                        color: "var(--color-text)",
-                      }}
-                    >
-                      {a.titulo}
-                    </div>
-                  ))}
+                <div
+                  key={i}
+                  style={{
+                    padding: "8px 4px",
+                    borderRight: "1px solid var(--color-divider)",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                    background: label ? "var(--color-neutral-900)" : undefined,
+                    color: label ? "var(--color-bg)" : undefined,
+                  }}
+                >
+                  {label}
                 </div>
               );
             })}
@@ -223,14 +219,14 @@ export default async function CalendarioPage() {
             const atrasoDesde = e.montajeFin || e.fabricacionFin || e.fabricacionInicio;
             const atraso = e.atrasadoMotivo && atrasoDesde ? segment(atrasoDesde, addDias(atrasoDesde, 2)) : null;
             return (
-              <div key={e.id} style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, minmax(34px, 1fr))`, borderTop: "1px solid var(--color-divider)" }}>
+              <div key={e.id} style={{ display: "grid", gridTemplateColumns: `160px repeat(${progresoTotalDias}, minmax(34px, 1fr))`, borderTop: "1px solid var(--color-divider)" }}>
                 <div style={{ padding: "10px 8px", fontSize: 12.5 }}>
                   <strong>{e.numero}</strong> {e.nombre}
                   <div className="text-muted" style={{ fontSize: 10.5 }}>
                     {e.proveedor?.nombre}
                   </div>
                 </div>
-                <div style={{ gridColumn: `2 / span ${totalDias}`, position: "relative", minHeight: 40 }}>
+                <div style={{ gridColumn: `2 / span ${progresoTotalDias}`, position: "relative", minHeight: 40 }}>
                   {fab && (
                     <div className={`${ESTADO_FILL.EN_FABRICACION}`} style={barStyle(fab)}>
                       Fabricación
