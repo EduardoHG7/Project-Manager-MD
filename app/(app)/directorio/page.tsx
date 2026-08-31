@@ -35,6 +35,12 @@ export default async function DirectorioPage() {
     orderBy: { nombre: "asc" },
   });
 
+  const supervisores = await prisma.usuario.findMany({
+    where: { rol: "SUPERVISOR", activo: true },
+    orderBy: { nombre: "asc" },
+    select: { id: true, nombre: true },
+  });
+
   return (
     <main className="page">
       <h2>Directorio</h2>
@@ -64,11 +70,13 @@ export default async function DirectorioPage() {
           estado: e.estado,
           distribuidorId: e.distribuidorId,
           proveedorId: e.proveedorId,
+          supervisorId: e.supervisorId,
           tieneDesviacion: e.incumplimientos.length > 0,
           usuario: e.usuario,
         }))}
         distribuidores={distribuidores.map((d) => ({ id: d.id, nombre: d.nombre }))}
         proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}
+        supervisores={supervisores}
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 28, marginTop: 32 }}>

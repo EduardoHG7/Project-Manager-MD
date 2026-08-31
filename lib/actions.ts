@@ -132,6 +132,31 @@ export async function asignarSupervisorEspacio(espacioId: string, supervisorId: 
   revalidatePath("/tablero");
 }
 
+// Asigna (o quita) un supervisor a varios stands de una sola vez, para no
+// tener que entrar espacio por espacio. Mismo criterio de permisos que la
+// versión individual: un Supervisor solo puede tocar su propia asignación.
+export async function asignarSupervisorMasivo(espacioIds: string[], supervisorId: string | null) {
+  const session = await requireEditor();
+  if (espacioIds.length === 0) return;
+
+  if (session.user.rol === "SUPERVISOR") {
+    if (supervisorId !== null && supervisorId !== session.user.id) {
+      throw new Error("Como supervisor, solo puedes asignarte a ti mismo.");
+    }
+    const espacios = await prisma.espacio.findMany({
+      where: { id: { in: espacioIds } },
+      select: { supervisorId: true },
+    });
+    const ajeno = espacios.some((e) => supervisorId === null && e.supervisorId && e.supervisorId !== session.user.id);
+    if (ajeno) throw new Error("Algunos de los stands seleccionados están asignados a otro supervisor.");
+  }
+
+  await prisma.espacio.updateMany({ where: { id: { in: espacioIds } }, data: { supervisorId } });
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  revalidatePath("/tablero");
+}
+
 // Cambia el número del stand. Como la Ficha de stand vive en /espacios/[numero],
 // quien llama esto debe redirigir a la nueva URL si la operación tiene éxito.
 export async function actualizarNumeroEspacio(espacioId: string, nuevoNumero: string) {
