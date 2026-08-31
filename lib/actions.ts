@@ -81,21 +81,55 @@ export async function actualizarEstadoEspacio(espacioId: string, estado: string)
 
 export async function actualizarEspacio(espacioId: string, data: Record<string, any>) {
   await requireEditor();
-  const permitido = [
-    "medidas",
-    "areaM2",
-    "alturaMaxCm",
-    "autosEnPiso",
-    "cargaElectricaKw",
-    "puntosLuz",
-    "pisoTarima",
-  ];
+  const camposTexto = ["medidas", "puntosLuz", "pisoTarima"];
+  const camposNumericos = ["areaM2", "autosEnPiso", "cargaElectricaKw"];
+  const camposRelacion = ["proveedorId", "distribuidorId"];
+  const camposFecha = ["montajeInicio", "montajeFin", "ultimaEntrega"];
+
   const payload: Record<string, any> = {};
-  for (const k of permitido) {
-    if (k in data) payload[k] = data[k];
+  for (const k of camposTexto) {
+    if (k in data) payload[k] = data[k] || null;
   }
+  for (const k of camposNumericos) {
+    if (k in data) payload[k] = data[k] === "" || data[k] === null ? null : Number(data[k]);
+  }
+  for (const k of camposRelacion) {
+    if (k in data) payload[k] = data[k] || null;
+  }
+  for (const k of camposFecha) {
+    if (k in data) payload[k] = data[k] ? new Date(data[k]) : null;
+  }
+  if ("alturaMaxCm" in data) {
+    const n = Number(data.alturaMaxCm);
+    if (data.alturaMaxCm !== "" && !Number.isNaN(n)) payload.alturaMaxCm = n;
+  }
+
   await prisma.espacio.update({ where: { id: espacioId }, data: payload });
-  revalidatePath(`/espacios`);
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  revalidatePath("/tablero");
+  revalidatePath("/mapa");
+  revalidatePath("/calendario");
+}
+
+// Admin puede asignar cualquier supervisor (o quitar la asignación).
+// Supervisor solo puede asignarse a sí mismo o quitar su propia asignación,
+// nunca tocar la asignación de otro supervisor.
+export async function asignarSupervisorEspacio(espacioId: string, supervisorId: string | null) {
+  const session = await requireEditor();
+  if (session.user.rol === "SUPERVISOR") {
+    const espacio = await prisma.espacio.findUnique({ where: { id: espacioId }, select: { supervisorId: true } });
+    if (supervisorId !== null && supervisorId !== session.user.id) {
+      throw new Error("Como supervisor, solo puedes asignarte a ti mismo.");
+    }
+    if (supervisorId === null && espacio?.supervisorId && espacio.supervisorId !== session.user.id) {
+      throw new Error("Solo puedes quitar tu propia asignación.");
+    }
+  }
+  await prisma.espacio.update({ where: { id: espacioId }, data: { supervisorId } });
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  revalidatePath("/tablero");
 }
 
 export async function actualizarEtapa(espacioId: string, disciplina: string, estado: string, detalle?: string) {

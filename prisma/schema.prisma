@@ -23,6 +23,7 @@ model Usuario {
   createdAt    DateTime @default(now())
 
   espacio Espacio? @relation("EspacioUsuario", fields: [espacioId], references: [id], onDelete: SetNull)
+  espaciosSupervisados Espacio[] @relation("EspacioSupervisor")
 
   mediciones       Medicion[]
   incumplimientosCerrados Incumplimiento[] @relation("IncumplimientoCerradoPor")
@@ -106,6 +107,7 @@ model Espacio {
 
   distribuidorId String?
   proveedorId     String?
+  supervisorId    String? // Usuario (rol SUPERVISOR) a cargo de este stand
 
   fabricacionInicio DateTime?
   fabricacionFin    DateTime?
@@ -126,6 +128,7 @@ model Espacio {
   evento       Evento                @relation(fields: [eventoId], references: [id], onDelete: Cascade)
   distribuidor Distribuidor?         @relation(fields: [distribuidorId], references: [id])
   proveedor    ProveedorConstructor? @relation(fields: [proveedorId], references: [id])
+  supervisor   Usuario?              @relation("EspacioSupervisor", fields: [supervisorId], references: [id])
 
   etapas          EspacioEtapa[]
   versiones       VersionEntrega[]

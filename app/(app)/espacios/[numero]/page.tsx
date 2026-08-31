@@ -8,10 +8,16 @@ import { ESTADO_LABEL, ESTADO_PILL, VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, e
 import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 import { ComentariosEspacio } from "./ComentariosEspacio";
 import { ContactoEspacio } from "./ContactoEspacio";
+import { EspecificacionesEspacio } from "./EspecificacionesEspacio";
+import { SupervisorAsignado } from "./SupervisorAsignado";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
 import { MaterialesEditor } from "./MaterialesEditor";
 import { SubirVersionStaffForm } from "./SubirVersionStaffForm";
+
+function toISODate(d: Date | null): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +54,22 @@ export default async function FichaStandPage({ params }: { params: { numero: str
       pins: true,
       incumplimientos: { where: { estado: { not: "CERRADA" } } },
       comentarios: { orderBy: { fecha: "desc" } },
+      supervisor: true,
     },
   });
   if (!espacio) notFound();
+
+  const [proveedores, distribuidores, supervisores] = canEdit
+    ? await Promise.all([
+        prisma.proveedorConstructor.findMany({ orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
+        prisma.distribuidor.findMany({ orderBy: { nombre: "asc" }, select: { id: true, nombre: true } }),
+        prisma.usuario.findMany({
+          where: { rol: "SUPERVISOR", activo: true },
+          orderBy: { nombre: "asc" },
+          select: { id: true, nombre: true },
+        }),
+      ])
+    : [[], [], []];
 
   return (
     <main className="page">
@@ -166,38 +185,25 @@ export default async function FichaStandPage({ params }: { params: { numero: str
           <h6 className="text-muted">Especificaciones</h6>
           <table className="table">
             <tbody>
-              <tr>
-                <td className="text-muted">Medidas en planta</td>
-                <td style={{ textAlign: "right" }}>{espacio.medidas || "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Área</td>
-                <td style={{ textAlign: "right" }}>{espacio.areaM2 ? `${espacio.areaM2} m²` : "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Altura máx. permitida</td>
-                <td style={{ textAlign: "right" }}>{espacio.alturaMaxCm} cm</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Autos en piso</td>
-                <td style={{ textAlign: "right" }}>{espacio.autosEnPiso ?? "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Carga eléctrica</td>
-                <td style={{ textAlign: "right" }}>{espacio.cargaElectricaKw ? `${espacio.cargaElectricaKw} kW` : "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Puntos de luz</td>
-                <td style={{ textAlign: "right" }}>{espacio.puntosLuz || "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Proveedor</td>
-                <td style={{ textAlign: "right" }}>{espacio.proveedor?.nombre || "—"}</td>
-              </tr>
-              <tr>
-                <td className="text-muted">Grupo</td>
-                <td style={{ textAlign: "right" }}>{espacio.distribuidor?.nombre || "—"}</td>
-              </tr>
+              <EspecificacionesEspacio
+                espacioId={espacio.id}
+                canEdit={canEdit}
+                medidas={espacio.medidas}
+                areaM2={espacio.areaM2}
+                alturaMaxCm={espacio.alturaMaxCm}
+                autosEnPiso={espacio.autosEnPiso}
+                cargaElectricaKw={espacio.cargaElectricaKw}
+                puntosLuz={espacio.puntosLuz}
+                proveedorId={espacio.proveedorId}
+                proveedorNombre={espacio.proveedor?.nombre ?? null}
+                distribuidorId={espacio.distribuidorId}
+                distribuidorNombre={espacio.distribuidor?.nombre ?? null}
+                montajeInicio={toISODate(espacio.montajeInicio)}
+                montajeFin={toISODate(espacio.montajeFin)}
+                ultimaEntrega={toISODate(espacio.ultimaEntrega)}
+                proveedores={proveedores}
+                distribuidores={distribuidores}
+              />
               <ContactoEspacio
                 espacioId={espacio.id}
                 canEdit={canEdit}
@@ -205,16 +211,16 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 telefonoContacto={espacio.telefonoContacto}
                 correoContacto={espacio.correoContacto}
               />
-              <tr>
-                <td className="text-muted">Montaje</td>
-                <td style={{ textAlign: "right" }}>
-                  {fmtFecha(espacio.montajeInicio)} – {fmtFecha(espacio.montajeFin)}
-                </td>
-              </tr>
-              <tr>
-                <td className="text-muted">Última entrega</td>
-                <td style={{ textAlign: "right" }}>{fmtFecha(espacio.ultimaEntrega)}</td>
-              </tr>
+              <SupervisorAsignado
+                espacioId={espacio.id}
+                canEdit={canEdit}
+                esAdmin={session?.user.rol === "ADMIN"}
+                userId={session?.user.id || ""}
+                userNombre={session?.user.name || ""}
+                supervisorId={espacio.supervisorId}
+                supervisorNombre={espacio.supervisor?.nombre ?? null}
+                supervisores={supervisores}
+              />
             </tbody>
           </table>
 
