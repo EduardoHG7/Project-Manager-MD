@@ -30,10 +30,6 @@ export default async function CalendarioPage() {
   }
   const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 
-  const inicio = evento.montajeInicio || evento.fechaInicio;
-  const fin = evento.desmontajeFin || evento.fechaFin;
-  const totalDias = Math.max(1, diffDias(inicio, fin) + 1);
-
   const espacios = await prisma.espacio.findMany({
     where: {
       eventoId: evento.id,
@@ -57,6 +53,30 @@ export default async function CalendarioPage() {
     descripcion: a.descripcion,
     creadoPorNombre: a.creadoPor?.nombre ?? null,
   }));
+
+  // El cronograma cubre desde la fecha más temprana hasta la más tardía entre
+  // las fechas fijas del evento (montaje, apertura, pausa, desmontaje) y las
+  // reuniones/actividades registradas, para que todo aparezca en la línea de tiempo.
+  const fechasClave = [
+    evento.montajeInicio,
+    evento.montajeFin,
+    evento.fechaInicio,
+    evento.fechaFin,
+    evento.pausaInicio,
+    evento.pausaFin,
+    evento.desmontajeInicio,
+    evento.desmontajeFin,
+    ...actividadesDb.map((a) => a.fecha),
+  ].filter((d): d is Date => d != null);
+  const inicio = new Date(Math.min(...fechasClave.map((d) => d.getTime())));
+  const fin = new Date(Math.max(...fechasClave.map((d) => d.getTime())));
+  const totalDias = Math.max(1, diffDias(inicio, fin) + 1);
+
+  const actividadesPorDia = new Map<string, typeof actividades>();
+  for (const a of actividades) {
+    if (!actividadesPorDia.has(a.fecha)) actividadesPorDia.set(a.fecha, []);
+    actividadesPorDia.get(a.fecha)!.push(a);
+  }
 
   const hoy = new Date();
 
@@ -130,8 +150,8 @@ export default async function CalendarioPage() {
       </div>
 
       <div className="table-wrap">
-        <div style={{ minWidth: 720 }}>
-          <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, 1fr)` }}>
+        <div style={{ minWidth: Math.max(720, 160 + totalDias * 34) }}>
+          <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, minmax(34px, 1fr))` }}>
             <div />
             {dias.map((d, i) => (
               <div
@@ -151,22 +171,46 @@ export default async function CalendarioPage() {
             <div style={{ fontSize: 10, color: "var(--color-text)", padding: "6px 0" }} />
             {dias.map((d, i) => {
               const label = milestone(d);
+              const acts = actividadesPorDia.get(toISO(d)!) || [];
               return (
-                <div
-                  key={i}
-                  style={{
-                    padding: "8px 4px",
-                    borderRight: "1px solid var(--color-divider)",
-                    fontSize: 9,
-                    fontWeight: 800,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                    background: label ? "var(--color-neutral-900)" : undefined,
-                    color: label ? "var(--color-bg)" : undefined,
-                  }}
-                >
-                  {label}
+                <div key={i} style={{ borderRight: "1px solid var(--color-divider)" }}>
+                  {label && (
+                    <div
+                      style={{
+                        padding: "8px 4px",
+                        fontSize: 9,
+                        fontWeight: 800,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        textAlign: "center",
+                        background: "var(--color-neutral-900)",
+                        color: "var(--color-bg)",
+                      }}
+                    >
+                      {label}
+                    </div>
+                  )}
+                  {acts.map((a) => (
+                    <div
+                      key={a.id}
+                      title={`${a.titulo}${a.hora ? " · " + a.hora : ""}`}
+                      style={{
+                        padding: "3px 3px",
+                        marginTop: label ? 2 : 0,
+                        fontSize: 8,
+                        fontWeight: 700,
+                        textAlign: "center",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        background: a.tipo === "OTRO" ? "transparent" : "var(--color-neutral-200)",
+                        border: a.tipo === "OTRO" ? "1px dashed var(--color-neutral-500)" : "1px solid var(--color-divider)",
+                        color: "var(--color-text)",
+                      }}
+                    >
+                      {a.titulo}
+                    </div>
+                  ))}
                 </div>
               );
             })}
@@ -179,7 +223,7 @@ export default async function CalendarioPage() {
             const atrasoDesde = e.montajeFin || e.fabricacionFin || e.fabricacionInicio;
             const atraso = e.atrasadoMotivo && atrasoDesde ? segment(atrasoDesde, addDias(atrasoDesde, 2)) : null;
             return (
-              <div key={e.id} style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, 1fr)`, borderTop: "1px solid var(--color-divider)" }}>
+              <div key={e.id} style={{ display: "grid", gridTemplateColumns: `160px repeat(${totalDias}, minmax(34px, 1fr))`, borderTop: "1px solid var(--color-divider)" }}>
                 <div style={{ padding: "10px 8px", fontSize: 12.5 }}>
                   <strong>{e.numero}</strong> {e.nombre}
                   <div className="text-muted" style={{ fontSize: 10.5 }}>
