@@ -613,6 +613,16 @@ export async function eliminarEspacio(id: string) {
   revalidatePath("/espacios");
 }
 
+export async function eliminarEspaciosMasivo(ids: string[]) {
+  await requireAdmin();
+  if (ids.length === 0) return;
+  await prisma.espacio.deleteMany({ where: { id: { in: ids } } });
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
+}
+
 // ── Admin: distribuidores y proveedores ──────────────────────────────
 
 export async function crearDistribuidor(nombre: string) {

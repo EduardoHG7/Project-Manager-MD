@@ -2,7 +2,14 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { actualizarEspacioAdmin, actualizarEstadoEspacio, asignarSupervisorEspacio, asignarSupervisorMasivo } from "@/lib/actions";
+import {
+  actualizarEspacioAdmin,
+  actualizarEstadoEspacio,
+  asignarSupervisorEspacio,
+  asignarSupervisorMasivo,
+  eliminarEspacio,
+  eliminarEspaciosMasivo,
+} from "@/lib/actions";
 import { ESTADOS, ESTADO_LABEL, ESTADO_PILL } from "@/lib/estados";
 import { AccesoExpositor } from "./AccesoExpositor";
 
@@ -44,6 +51,7 @@ export function DirectorioClient({
   const [supervisorMasivo, setSupervisorMasivo] = useState("");
   const [isPendingMasivo, startMasivoTransition] = useTransition();
   const [errorMasivo, setErrorMasivo] = useState<string | null>(null);
+  const [isPendingEliminar, startEliminarTransition] = useTransition();
 
   function actualizarLocal(id: string, cambios: Partial<Espacio>) {
     setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, ...cambios } : f)));
@@ -105,6 +113,30 @@ export function DirectorioClient({
     });
   }
 
+  function eliminarUno(espacio: Espacio) {
+    if (!confirm(`¿Eliminar el stand ${espacio.numero} · ${espacio.nombre}? Esto borra también sus mediciones, pines e incumplimientos.`)) return;
+    startEliminarTransition(async () => {
+      await eliminarEspacio(espacio.id);
+      setFilas((prev) => prev.filter((f) => f.id !== espacio.id));
+      setSeleccionados((prev) => {
+        const next = new Set(prev);
+        next.delete(espacio.id);
+        return next;
+      });
+    });
+  }
+
+  function eliminarSeleccionados() {
+    const ids = Array.from(seleccionados);
+    if (ids.length === 0) return;
+    if (!confirm(`¿Eliminar los ${ids.length} stands seleccionados? Esto borra también sus mediciones, pines e incumplimientos.`)) return;
+    startEliminarTransition(async () => {
+      await eliminarEspaciosMasivo(ids);
+      setFilas((prev) => prev.filter((f) => !seleccionados.has(f.id)));
+      setSeleccionados(new Set());
+    });
+  }
+
   return (
     <div style={{ marginTop: 16 }}>
       {canEdit && seleccionados.size > 0 && (
@@ -126,6 +158,9 @@ export function DirectorioClient({
           </select>
           <button className="btn btn-primary" disabled={isPendingMasivo} onClick={aplicarSupervisorMasivo}>
             {isPendingMasivo ? "Asignando…" : "Asignar supervisor"}
+          </button>
+          <button className="btn-ghost" disabled={isPendingEliminar} onClick={eliminarSeleccionados} style={{ color: "var(--color-accent)" }}>
+            {isPendingEliminar ? "Eliminando…" : "Eliminar seleccionados"}
           </button>
           <button className="btn-ghost" disabled={isPendingMasivo} onClick={() => setSeleccionados(new Set())}>
             Cancelar
@@ -156,6 +191,7 @@ export function DirectorioClient({
               <th>Estado</th>
               <th>Supervisor</th>
               {canEdit && <th>Acceso expositor</th>}
+              {canEdit && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -300,6 +336,18 @@ export function DirectorioClient({
                 {canEdit && (
                   <td>
                     <AccesoExpositor espacioId={e.id} usuario={e.usuario} />
+                  </td>
+                )}
+                {canEdit && (
+                  <td>
+                    <button
+                      className="btn-ghost"
+                      disabled={isPendingEliminar}
+                      onClick={() => eliminarUno(e)}
+                      style={{ color: "var(--color-accent)" }}
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 )}
               </tr>
