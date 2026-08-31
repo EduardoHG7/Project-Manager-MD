@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADOS, ESTADO_LABEL, ESTADO_FILL, SEVERIDAD_PILL, SEVERIDAD_LABEL, fmtFecha } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
+import { SupervisoresPanel } from "./SupervisoresPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,24 @@ export default async function TableroPage() {
     entry.stands++;
     entry.espacioIds.push(e.id);
   }
+
+  const supervisoresDb = await prisma.usuario.findMany({
+    where: { rol: "SUPERVISOR", activo: true },
+    orderBy: { nombre: "asc" },
+    select: { id: true, nombre: true },
+  });
+  const espaciosPorSupervisor = new Map<string, { numero: string; nombre: string }[]>();
+  for (const e of espacios) {
+    if (!e.supervisorId) continue;
+    if (!espaciosPorSupervisor.has(e.supervisorId)) espaciosPorSupervisor.set(e.supervisorId, []);
+    espaciosPorSupervisor.get(e.supervisorId)!.push({ numero: e.numero, nombre: e.nombre });
+  }
+  const supervisores = supervisoresDb.map((s) => ({
+    id: s.id,
+    nombre: s.nombre,
+    stands: espaciosPorSupervisor.get(s.id) || [],
+  }));
+  const sinSupervisor = espacios.filter((e) => !e.supervisorId).map((e) => ({ numero: e.numero, nombre: e.nombre }));
 
   const todosIncump = await prisma.incumplimiento.findMany({
     where: { espacio: { eventoId: evento.id }, estado: { not: "CERRADA" } },
@@ -178,6 +197,11 @@ export default async function TableroPage() {
           <Link href="/directorio" className="btn btn-secondary" style={{ marginTop: 14 }}>
             Ver directorio →
           </Link>
+
+          <h6 className="text-muted" style={{ marginTop: 32 }}>
+            Supervisores
+          </h6>
+          <SupervisoresPanel supervisores={supervisores} sinAsignar={sinSupervisor} />
         </section>
       </div>
     </main>
