@@ -340,6 +340,44 @@ export async function archivarEvento(id: string, activo: boolean) {
   revalidatePath("/", "layout");
 }
 
+// Solo las fechas del cronograma: a diferencia de actualizarEvento (nombre,
+// recinto, plano), esto lo puede ajustar Supervisor además de Admin — son
+// quienes coordinan el montaje en el día a día.
+export async function actualizarCronograma(
+  id: string,
+  data: {
+    fechaInicio: string;
+    fechaFin: string;
+    montajeInicio?: string | null;
+    montajeFin?: string | null;
+    pausaInicio?: string | null;
+    pausaFin?: string | null;
+    desmontajeInicio?: string | null;
+    desmontajeFin?: string | null;
+    horariosNota?: string | null;
+  }
+) {
+  await requireEditor();
+  const fecha = (v: string | null | undefined) => (v ? new Date(v) : null);
+
+  await prisma.evento.update({
+    where: { id },
+    data: {
+      fechaInicio: new Date(data.fechaInicio),
+      fechaFin: new Date(data.fechaFin),
+      montajeInicio: fecha(data.montajeInicio),
+      montajeFin: fecha(data.montajeFin),
+      pausaInicio: fecha(data.pausaInicio),
+      pausaFin: fecha(data.pausaFin),
+      desmontajeInicio: fecha(data.desmontajeInicio),
+      desmontajeFin: fecha(data.desmontajeFin),
+      horariosNota: data.horariosNota?.trim() || null,
+    },
+  });
+  revalidatePath("/calendario");
+  revalidatePath("/", "layout");
+}
+
 // ── Admin: espacios (clic en el plano) ───────────────────────────────
 
 // Los campos opcionales aceptan string|number para poner un valor, null

@@ -4,8 +4,13 @@ import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_FILL } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
+import { EditarCronograma } from "./EditarCronograma";
 
 export const dynamic = "force-dynamic";
+
+function toISO(d: Date | null): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
+}
 
 function diffDias(a: Date, b: Date) {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
@@ -18,10 +23,11 @@ function addDias(d: Date, n: number) {
 
 export default async function CalendarioPage() {
   const evento = await getEventoSeleccionado();
+  const session = await getServerSession(authOptions);
   if (!evento) {
-    const session = await getServerSession(authOptions);
     return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
   }
+  const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 
   const inicio = evento.montajeInicio || evento.fechaInicio;
   const fin = evento.desmontajeFin || evento.fechaFin;
@@ -71,6 +77,23 @@ export default async function CalendarioPage() {
         <p className="text-muted" style={{ fontSize: 13, marginTop: 4, whiteSpace: "pre-wrap" }}>
           {evento.horariosNota}
         </p>
+      )}
+
+      {canEdit && (
+        <EditarCronograma
+          evento={{
+            id: evento.id,
+            fechaInicio: toISO(evento.fechaInicio)!,
+            fechaFin: toISO(evento.fechaFin)!,
+            montajeInicio: toISO(evento.montajeInicio),
+            montajeFin: toISO(evento.montajeFin),
+            pausaInicio: toISO(evento.pausaInicio),
+            pausaFin: toISO(evento.pausaFin),
+            desmontajeInicio: toISO(evento.desmontajeInicio),
+            desmontajeFin: toISO(evento.desmontajeFin),
+            horariosNota: evento.horariosNota,
+          }}
+        />
       )}
 
       <div style={{ display: "flex", gap: 16, margin: "16px 0", fontSize: 12 }}>
