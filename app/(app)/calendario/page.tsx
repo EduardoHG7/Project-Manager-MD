@@ -5,6 +5,7 @@ import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADO_FILL } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
 import { EditarCronograma } from "./EditarCronograma";
+import { ActividadesCalendario } from "./ActividadesCalendario";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,21 @@ export default async function CalendarioPage() {
     include: { distribuidor: true, proveedor: true },
     orderBy: { numero: "asc" },
   });
+
+  const actividadesDb = await prisma.eventoActividad.findMany({
+    where: { eventoId: evento.id },
+    include: { creadoPor: true },
+    orderBy: { fecha: "asc" },
+  });
+  const actividades = actividadesDb.map((a) => ({
+    id: a.id,
+    titulo: a.titulo,
+    fecha: toISO(a.fecha)!,
+    hora: a.hora,
+    tipo: a.tipo,
+    descripcion: a.descripcion,
+    creadoPorNombre: a.creadoPor?.nombre ?? null,
+  }));
 
   const hoy = new Date();
 
@@ -196,6 +212,8 @@ export default async function CalendarioPage() {
           {espacios.length === 0 && <p className="text-muted" style={{ marginTop: 16 }}>Aún no hay fechas de fabricación/montaje registradas.</p>}
         </div>
       </div>
+
+      <ActividadesCalendario eventoId={evento.id} canEdit={canEdit} actividades={actividades} />
     </main>
   );
 }

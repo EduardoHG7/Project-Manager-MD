@@ -412,6 +412,54 @@ export async function actualizarCronograma(
   revalidatePath("/", "layout");
 }
 
+// Reuniones y otras actividades sueltas (no son fechas fijas del evento).
+export async function crearActividad(
+  eventoId: string,
+  data: { titulo: string; fecha: string; hora?: string; tipo?: string; descripcion?: string }
+) {
+  const session = await requireEditor();
+  if (!data.titulo?.trim()) throw new Error("Falta el título.");
+  if (!data.fecha) throw new Error("Falta la fecha.");
+  await prisma.eventoActividad.create({
+    data: {
+      eventoId,
+      titulo: data.titulo.trim(),
+      fecha: new Date(data.fecha),
+      hora: data.hora?.trim() || null,
+      tipo: data.tipo === "OTRO" ? "OTRO" : "REUNION",
+      descripcion: data.descripcion?.trim() || null,
+      creadoPorId: session.user.id,
+    },
+  });
+  revalidatePath("/calendario");
+}
+
+export async function actualizarActividad(
+  id: string,
+  data: { titulo: string; fecha: string; hora?: string; tipo?: string; descripcion?: string }
+) {
+  await requireEditor();
+  if (!data.titulo?.trim()) throw new Error("Falta el título.");
+  if (!data.fecha) throw new Error("Falta la fecha.");
+  await prisma.eventoActividad.update({
+    where: { id },
+    data: {
+      titulo: data.titulo.trim(),
+      fecha: new Date(data.fecha),
+      hora: data.hora?.trim() || null,
+      tipo: data.tipo === "OTRO" ? "OTRO" : "REUNION",
+      descripcion: data.descripcion?.trim() || null,
+    },
+  });
+  revalidatePath("/calendario");
+}
+
+export async function eliminarActividad(id: string) {
+  await requireEditor();
+  await prisma.eventoActividad.delete({ where: { id } });
+  revalidatePath("/calendario");
+}
+
 // ── Admin: espacios (clic en el plano) ───────────────────────────────
 
 // Los campos opcionales aceptan string|number para poner un valor, null

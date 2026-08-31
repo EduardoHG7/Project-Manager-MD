@@ -24,6 +24,7 @@ model Usuario {
 
   espacio Espacio? @relation("EspacioUsuario", fields: [espacioId], references: [id], onDelete: SetNull)
   espaciosSupervisados Espacio[] @relation("EspacioSupervisor")
+  actividadesCreadas   EventoActividad[]
 
   mediciones       Medicion[]
   incumplimientosCerrados Incumplimiento[] @relation("IncumplimientoCerradoPor")
@@ -53,9 +54,29 @@ model Evento {
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  espacios Espacio[]
+  espacios    Espacio[]
+  actividades EventoActividad[]
 
   @@map("eventos")
+}
+
+// ── Reuniones y otras actividades sueltas del cronograma ──────────
+// (a diferencia de las fechas fijas del evento: montaje, apertura, etc.)
+model EventoActividad {
+  id          String   @id @default(cuid())
+  eventoId    String
+  titulo      String
+  fecha       DateTime
+  hora        String? // "14:00", opcional
+  tipo        String   @default("REUNION") // REUNION | OTRO
+  descripcion String?
+  creadoPorId String?
+  createdAt   DateTime @default(now())
+
+  evento    Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  creadoPor Usuario? @relation(fields: [creadoPorId], references: [id], onDelete: SetNull)
+
+  @@map("evento_actividades")
 }
 
 // ── Grupo/distribuidor que representa la marca (ej. Autos Xtra) ──
