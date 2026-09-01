@@ -106,14 +106,52 @@ export default async function CalendarioPage() {
   }
 
   const diasProgreso = Array.from({ length: progresoTotalDias }, (_, i) => addDias(progresoInicio, i));
-  const milestone = (d: Date) => {
-    if (evento.montajeInicio && diffDias(evento.montajeInicio, d) === 0) return "Inicia montaje";
-    if (evento.montajeFin && diffDias(evento.montajeFin, d) === 0) return "Cierre montaje";
-    if (diffDias(evento.fechaInicio, d) === 0) return "Apertura";
-    if (evento.pausaInicio && diffDias(evento.pausaInicio, d) === 0) return "Pausa";
-    if (evento.pausaFin && diffDias(addDias(evento.pausaFin, 1), d) === 0) return "Reapertura";
-    if (diffDias(evento.fechaFin, d) === 0) return "Cierre";
-    if (evento.desmontajeInicio && diffDias(evento.desmontajeInicio, d) === 0) return "Desmontaje";
+
+  // A diferencia de marcar solo el día exacto en que empieza/termina cada
+  // etapa (montaje, apertura, pausa, desmontaje), esto etiqueta TODOS los
+  // días dentro del rango, para que la etapa se vea completa en el
+  // calendario y no solo su primer/último día.
+  function enRango(d: Date, inicio: Date | null | undefined, fin: Date | null | undefined) {
+    if (!inicio || !fin) return false;
+    return diffDias(inicio, d) >= 0 && diffDias(d, fin) >= 0;
+  }
+
+  const milestone = (d: Date): string => {
+    const montajeFin = evento.montajeFin || evento.montajeInicio;
+    if (enRango(d, evento.montajeInicio, montajeFin)) {
+      if (diffDias(evento.montajeInicio!, d) === 0) return "Inicia montaje";
+      if (diffDias(montajeFin!, d) === 0) return "Cierre montaje";
+      return "Montaje";
+    }
+
+    const desmontajeFin = evento.desmontajeFin || evento.desmontajeInicio;
+    if (enRango(d, evento.desmontajeInicio, desmontajeFin)) {
+      const esInicio = diffDias(evento.desmontajeInicio!, d) === 0;
+      const esFin = diffDias(desmontajeFin!, d) === 0;
+      if (esInicio && esFin) return "Desmontaje";
+      if (esInicio) return "Inicia desmontaje";
+      if (esFin) return "Cierra desmontaje";
+      return "Desmontaje";
+    }
+
+    if (enRango(d, evento.pausaInicio, evento.pausaFin)) return "Pausa";
+
+    const bloques: { inicio: Date; fin: Date; labelInicio: string }[] =
+      evento.pausaInicio && evento.pausaFin
+        ? [
+            { inicio: evento.fechaInicio, fin: addDias(evento.pausaInicio, -1), labelInicio: "Apertura" },
+            { inicio: addDias(evento.pausaFin, 1), fin: evento.fechaFin, labelInicio: "Reapertura" },
+          ]
+        : [{ inicio: evento.fechaInicio, fin: evento.fechaFin, labelInicio: "Apertura" }];
+
+    for (const b of bloques) {
+      if (enRango(d, b.inicio, b.fin)) {
+        if (diffDias(b.inicio, d) === 0) return b.labelInicio;
+        if (diffDias(evento.fechaFin, d) === 0) return "Cierre";
+        return "Abierto";
+      }
+    }
+
     return "";
   };
 
