@@ -6,6 +6,7 @@ import { getEventoSeleccionado } from "@/lib/evento";
 import { ESTADOS, ESTADO_LABEL, ESTADO_FILL, SEVERIDAD_PILL, SEVERIDAD_LABEL, fmtFecha } from "@/lib/estados";
 import { SinEvento } from "../_shared/SinEvento";
 import { SupervisoresPanel } from "./SupervisoresPanel";
+import { RiggingPanel } from "./RiggingPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,10 @@ export default async function TableroPage() {
     stands: espaciosPorSupervisor.get(s.id) || [],
   }));
   const sinSupervisor = espacios.filter((e) => !e.supervisorId).map((e) => ({ numero: e.numero, nombre: e.nombre }));
+
+  const standsConRigging = espacios
+    .filter((e) => e.usaRigging === true)
+    .map((e) => ({ numero: e.numero, nombre: e.nombre }));
 
   const todosIncump = await prisma.incumplimiento.findMany({
     where: { espacio: { eventoId: evento.id }, estado: { not: "CERRADA" } },
@@ -168,6 +173,16 @@ export default async function TableroPage() {
               </div>
             ))}
           </div>
+
+          <h6 className="text-muted" style={{ marginTop: 32 }}>
+            Supervisores
+          </h6>
+          <SupervisoresPanel supervisores={supervisores} sinAsignar={sinSupervisor} />
+
+          <h6 className="text-muted" style={{ marginTop: 32 }}>
+            Rigging
+          </h6>
+          <RiggingPanel stands={standsConRigging} />
         </section>
 
         <section>
@@ -197,11 +212,6 @@ export default async function TableroPage() {
           <Link href="/directorio" className="btn btn-secondary" style={{ marginTop: 14 }}>
             Ver directorio →
           </Link>
-
-          <h6 className="text-muted" style={{ marginTop: 32 }}>
-            Supervisores
-          </h6>
-          <SupervisoresPanel supervisores={supervisores} sinAsignar={sinSupervisor} />
         </section>
       </div>
     </main>
