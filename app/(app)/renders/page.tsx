@@ -12,6 +12,7 @@ export default async function RendersPage() {
   const session = await getServerSession(authOptions);
   if (!evento) return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
   const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
+  const esAdmin = session?.user.rol === "ADMIN";
 
   const versiones = await prisma.versionEntrega.findMany({
     where: { espacio: { eventoId: evento.id } },
@@ -41,6 +42,7 @@ export default async function RendersPage() {
   return (
     <RendersClient
       canEdit={canEdit}
+      esAdmin={esAdmin}
       pendientes={pendientes.map(datos)}
       decididas={decididas.map(datos)}
     />

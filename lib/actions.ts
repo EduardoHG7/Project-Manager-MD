@@ -810,3 +810,37 @@ export async function decidirVersion(versionId: string, estado: "APROBADA" | "RE
   revalidatePath("/directorio");
   revalidatePath("/espacios");
 }
+
+// Solo Admin puede eliminar un render subido (duplicado, subido por error,
+// etc.). Al borrar, el estado del stand se recalcula según la versión más
+// reciente que quede (o vuelve a SIN_RENDER si no queda ninguna).
+export async function eliminarVersion(versionId: string) {
+  await requireAdmin();
+  const version = await prisma.versionEntrega.findUnique({ where: { id: versionId } });
+  if (!version) throw new Error("Versión no encontrada.");
+
+  await prisma.versionEntrega.delete({ where: { id: versionId } });
+
+  const restante = await prisma.versionEntrega.findFirst({
+    where: { espacioId: version.espacioId },
+    orderBy: { fecha: "desc" },
+  });
+
+  if (!restante) {
+    await prisma.espacio.update({ where: { id: version.espacioId }, data: { estado: "SIN_RENDER", renderUrl: null } });
+  } else if (restante.estado === "APROBADA") {
+    await prisma.espacio.update({
+      where: { id: version.espacioId },
+      data: { estado: "APROBADO", renderUrl: restante.renderUrls[0] ?? null },
+    });
+  } else if (restante.estado === "PENDIENTE") {
+    await prisma.espacio.update({ where: { id: version.espacioId }, data: { estado: "EN_REVISION" } });
+  }
+
+  revalidatePath("/renders");
+  revalidatePath("/mi-stand");
+  revalidatePath("/tablero");
+  revalidatePath("/mapa");
+  revalidatePath("/directorio");
+  revalidatePath("/espacios");
+}

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { decidirVersion } from "@/lib/actions";
+import { decidirVersion, eliminarVersion } from "@/lib/actions";
 import { VERSION_ESTADO_LABEL, VERSION_ESTADO_PILL, fmtFechaHora } from "@/lib/estados";
 import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 
@@ -23,12 +23,20 @@ type VersionItem = {
   comentario: string | null;
 };
 
-function TarjetaPendiente({ v, canEdit }: { v: VersionItem; canEdit: boolean }) {
+function TarjetaPendiente({ v, canEdit, esAdmin }: { v: VersionItem; canEdit: boolean; esAdmin: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [rechazando, setRechazando] = useState(false);
   const [comentario, setComentario] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  function eliminar() {
+    if (!confirm(`¿Eliminar la versión ${v.version} de ${v.espacioNumero} · ${v.espacioNombre}? El expositor podrá subir otra.`)) return;
+    startTransition(async () => {
+      await eliminarVersion(v.id);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="card elev-sm">
@@ -66,6 +74,11 @@ function TarjetaPendiente({ v, canEdit }: { v: VersionItem; canEdit: boolean }) 
               <button className="btn btn-secondary" disabled={isPending} onClick={() => setRechazando(true)}>
                 Rechazar
               </button>
+              {esAdmin && (
+                <button className="btn-ghost" disabled={isPending} onClick={eliminar} style={{ marginLeft: "auto" }}>
+                  Eliminar
+                </button>
+              )}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -107,12 +120,51 @@ function TarjetaPendiente({ v, canEdit }: { v: VersionItem; canEdit: boolean }) 
   );
 }
 
+function FilaDecidida({ v, esAdmin }: { v: VersionItem; esAdmin: boolean }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function eliminar() {
+    if (!confirm(`¿Eliminar la versión ${v.version} de ${v.espacioNumero} · ${v.espacioNombre}?`)) return;
+    startTransition(async () => {
+      await eliminarVersion(v.id);
+      router.refresh();
+    });
+  }
+
+  return (
+    <tr>
+      <td>
+        <Link href={`/espacios/${encodeURIComponent(v.espacioNumero)}`} style={{ color: "inherit" }}>
+          {v.espacioNumero} · {v.espacioNombre}
+        </Link>
+      </td>
+      <td>{v.version}</td>
+      <td>
+        <span className={`pill ${VERSION_ESTADO_PILL[v.estado]}`}>{VERSION_ESTADO_LABEL[v.estado]}</span>
+      </td>
+      <td>{v.revisadoPor || "—"}</td>
+      <td className="text-muted">{fmtFechaHora(v.revisadoEn)}</td>
+      <td className="text-muted">{v.comentario || "—"}</td>
+      {esAdmin && (
+        <td>
+          <button className="btn-ghost" disabled={isPending} onClick={eliminar}>
+            Eliminar
+          </button>
+        </td>
+      )}
+    </tr>
+  );
+}
+
 export function RendersClient({
   canEdit,
+  esAdmin,
   pendientes,
   decididas,
 }: {
   canEdit: boolean;
+  esAdmin: boolean;
   pendientes: VersionItem[];
   decididas: VersionItem[];
 }) {
@@ -124,7 +176,7 @@ export function RendersClient({
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
         {pendientes.length === 0 && <p className="text-muted">No hay renders pendientes de revisión.</p>}
         {pendientes.map((v) => (
-          <TarjetaPendiente key={v.id} v={v} canEdit={canEdit} />
+          <TarjetaPendiente key={v.id} v={v} canEdit={canEdit} esAdmin={esAdmin} />
         ))}
       </div>
 
@@ -141,28 +193,16 @@ export function RendersClient({
               <th>Decidido por</th>
               <th>Cuándo</th>
               <th>Comentario</th>
+              {esAdmin && <th></th>}
             </tr>
           </thead>
           <tbody>
             {decididas.map((v) => (
-              <tr key={v.id}>
-                <td>
-                  <Link href={`/espacios/${encodeURIComponent(v.espacioNumero)}`} style={{ color: "inherit" }}>
-                    {v.espacioNumero} · {v.espacioNombre}
-                  </Link>
-                </td>
-                <td>{v.version}</td>
-                <td>
-                  <span className={`pill ${VERSION_ESTADO_PILL[v.estado]}`}>{VERSION_ESTADO_LABEL[v.estado]}</span>
-                </td>
-                <td>{v.revisadoPor || "—"}</td>
-                <td className="text-muted">{fmtFechaHora(v.revisadoEn)}</td>
-                <td className="text-muted">{v.comentario || "—"}</td>
-              </tr>
+              <FilaDecidida key={v.id} v={v} esAdmin={esAdmin} />
             ))}
             {decididas.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-muted">
+                <td colSpan={esAdmin ? 7 : 6} className="text-muted">
                   Todavía no hay decisiones registradas.
                 </td>
               </tr>
