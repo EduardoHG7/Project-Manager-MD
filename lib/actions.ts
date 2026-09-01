@@ -85,6 +85,7 @@ export async function actualizarEspacio(espacioId: string, data: Record<string, 
   const camposNumericos = ["areaM2", "autosEnPiso", "cargaElectricaKw"];
   const camposRelacion = ["proveedorId", "distribuidorId"];
   const camposFecha = ["montajeInicio", "montajeFin", "ultimaEntrega"];
+  const camposBooleanos = ["usaRigging"];
 
   const payload: Record<string, any> = {};
   for (const k of camposTexto) {
@@ -98,6 +99,9 @@ export async function actualizarEspacio(espacioId: string, data: Record<string, 
   }
   for (const k of camposFecha) {
     if (k in data) payload[k] = data[k] ? new Date(data[k]) : null;
+  }
+  for (const k of camposBooleanos) {
+    if (k in data) payload[k] = data[k] === "" || data[k] === null ? null : data[k] === true || data[k] === "true";
   }
   if ("alturaMaxCm" in data) {
     const n = Number(data.alturaMaxCm);

@@ -195,6 +195,7 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 autosEnPiso={espacio.autosEnPiso}
                 cargaElectricaKw={espacio.cargaElectricaKw}
                 puntosLuz={espacio.puntosLuz}
+                usaRigging={espacio.usaRigging}
                 proveedorId={espacio.proveedorId}
                 proveedorNombre={espacio.proveedor?.nombre ?? null}
                 distribuidorId={espacio.distribuidorId}

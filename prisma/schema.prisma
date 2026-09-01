@@ -140,6 +140,7 @@ model Espacio {
 
   cargaElectricaKw Float?
   puntosLuz        String?
+  usaRigging       Boolean?
   pisoTarima       String?
   ultimaEntrega    DateTime?
 

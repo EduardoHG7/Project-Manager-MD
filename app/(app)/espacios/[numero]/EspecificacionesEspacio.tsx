@@ -19,6 +19,7 @@ export function EspecificacionesEspacio({
   autosEnPiso,
   cargaElectricaKw,
   puntosLuz,
+  usaRigging,
   proveedorId,
   proveedorNombre,
   distribuidorId,
@@ -38,6 +39,7 @@ export function EspecificacionesEspacio({
   autosEnPiso: number | null;
   cargaElectricaKw: number | null;
   puntosLuz: string | null;
+  usaRigging: boolean | null;
   proveedorId: string | null;
   proveedorNombre: string | null;
   distribuidorId: string | null;
@@ -56,6 +58,7 @@ export function EspecificacionesEspacio({
     autosEnPiso: autosEnPiso ?? "",
     cargaElectricaKw: cargaElectricaKw ?? "",
     puntosLuz: puntosLuz || "",
+    usaRigging: usaRigging === null ? "" : String(usaRigging),
     proveedorId: proveedorId || "",
     distribuidorId: distribuidorId || "",
     montajeInicio: montajeInicio || "",
@@ -141,6 +144,10 @@ export function EspecificacionesEspacio({
         <tr>
           <td className="text-muted">Puntos de luz</td>
           <td style={{ textAlign: "right" }}>{puntosLuz || "—"}</td>
+        </tr>
+        <tr>
+          <td className="text-muted">¿Usará Rigging?</td>
+          <td style={{ textAlign: "right" }}>{usaRigging === null ? "—" : usaRigging ? "Sí" : "No"}</td>
         </tr>
         <tr>
           <td className="text-muted">Proveedor</td>
@@ -272,6 +279,22 @@ export function EspecificacionesEspacio({
               if (e.target.value !== campos.puntosLuz) guardar({ puntosLuz: e.target.value });
             }}
           />
+        </td>
+      </tr>
+      <tr>
+        <td className="text-muted">¿Usará Rigging?</td>
+        <td style={{ textAlign: "right" }}>
+          <select
+            className="input"
+            style={{ textAlign: "right" }}
+            value={campos.usaRigging}
+            disabled={isPending}
+            onChange={(e) => guardar({ usaRigging: e.target.value })}
+          >
+            <option value="">— Sin definir —</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+          </select>
         </td>
       </tr>
       <tr>
