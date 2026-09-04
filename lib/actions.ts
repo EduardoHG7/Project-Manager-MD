@@ -82,10 +82,32 @@ export async function actualizarEstadoEspacio(espacioId: string, estado: string)
 export async function actualizarEspacio(espacioId: string, data: Record<string, any>) {
   await requireEditor();
   const camposTexto = ["medidas", "puntosLuz", "pisoTarima"];
-  const camposNumericos = ["areaM2", "autosEnPiso", "cargaElectricaKw"];
+  const camposNumericos = [
+    "areaM2",
+    "autosEnPiso",
+    "cargaElectricaKw",
+    "riggingPuntos",
+    "manliftBrazoHorasMontaje",
+    "manliftBrazoHorasDesmontaje",
+    "montacargasHorasMontaje",
+    "montacargasHorasDesmontaje",
+    "internetWifiMb",
+    "internetCableadoMb",
+  ];
   const camposRelacion = ["proveedorId", "distribuidorId"];
   const camposFecha = ["montajeInicio", "montajeFin", "ultimaEntrega"];
-  const camposBooleanos = ["usaRigging"];
+  const camposBooleanos = [
+    "usaRigging",
+    "manliftBrazo",
+    "montacargas",
+    "internet",
+    "internetWifi",
+    "internetCableado",
+    "internetPortalCautivo",
+    "internetP2P",
+    "internetSalidaAdicional",
+    "internetIpPublica",
+  ];
 
   const payload: Record<string, any> = {};
   for (const k of camposTexto) {

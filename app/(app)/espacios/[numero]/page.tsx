@@ -9,6 +9,7 @@ import { GaleriaArchivos } from "@/components/GaleriaArchivos";
 import { ComentariosEspacio } from "./ComentariosEspacio";
 import { ContactoEspacio } from "./ContactoEspacio";
 import { EspecificacionesEspacio } from "./EspecificacionesEspacio";
+import { RequisitosMontajeEspacio } from "./RequisitosMontajeEspacio";
 import { SupervisorAsignado } from "./SupervisorAsignado";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
@@ -222,6 +223,34 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 supervisorId={espacio.supervisorId}
                 supervisorNombre={espacio.supervisor?.nombre ?? null}
                 supervisores={supervisores}
+              />
+            </tbody>
+          </table>
+
+          <h6 className="text-muted" style={{ marginTop: 24 }}>
+            Requisitos de montaje
+          </h6>
+          <table className="table">
+            <tbody>
+              <RequisitosMontajeEspacio
+                espacioId={espacio.id}
+                canEdit={canEdit}
+                riggingPuntos={espacio.riggingPuntos}
+                manliftBrazo={espacio.manliftBrazo}
+                manliftBrazoHorasMontaje={espacio.manliftBrazoHorasMontaje}
+                manliftBrazoHorasDesmontaje={espacio.manliftBrazoHorasDesmontaje}
+                montacargas={espacio.montacargas}
+                montacargasHorasMontaje={espacio.montacargasHorasMontaje}
+                montacargasHorasDesmontaje={espacio.montacargasHorasDesmontaje}
+                internet={espacio.internet}
+                internetWifi={espacio.internetWifi}
+                internetWifiMb={espacio.internetWifiMb}
+                internetCableado={espacio.internetCableado}
+                internetCableadoMb={espacio.internetCableadoMb}
+                internetPortalCautivo={espacio.internetPortalCautivo}
+                internetP2P={espacio.internetP2P}
+                internetSalidaAdicional={espacio.internetSalidaAdicional}
+                internetIpPublica={espacio.internetIpPublica}
               />
             </tbody>
           </table>
