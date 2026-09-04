@@ -844,3 +844,115 @@ export async function eliminarVersion(versionId: string) {
   revalidatePath("/directorio");
   revalidatePath("/espacios");
 }
+
+// ── CRM de invitados ──────────────────────────────────────────────
+
+export async function crearEtapaInvitado(eventoId: string, nombre: string) {
+  await requireEditor();
+  const n = nombre.trim();
+  if (!n) throw new Error("El nombre de la etapa es obligatorio.");
+  const ultima = await prisma.etapaInvitado.findFirst({ where: { eventoId }, orderBy: { orden: "desc" } });
+  const etapa = await prisma.etapaInvitado.upsert({
+    where: { eventoId_nombre: { eventoId, nombre: n } },
+    update: {},
+    create: { eventoId, nombre: n, orden: (ultima?.orden ?? -1) + 1 },
+  });
+  revalidatePath("/invitados");
+  return etapa;
+}
+
+export async function eliminarEtapaInvitado(id: string) {
+  await requireAdmin();
+  await prisma.etapaInvitado.delete({ where: { id } });
+  revalidatePath("/invitados");
+}
+
+type DatosInvitado = {
+  nombre: string;
+  empresa?: string | null;
+  telefono?: string | null;
+  correo?: string | null;
+  notas?: string | null;
+  etapaId?: string | null;
+};
+
+export async function crearInvitado(eventoId: string, data: DatosInvitado) {
+  await requireEditor();
+  const nombre = data.nombre?.trim();
+  if (!nombre) throw new Error("El nombre es obligatorio.");
+  const invitado = await prisma.invitado.create({
+    data: {
+      eventoId,
+      nombre,
+      empresa: data.empresa?.trim() || null,
+      telefono: data.telefono?.trim() || null,
+      correo: data.correo?.trim() || null,
+      notas: data.notas?.trim() || null,
+      etapaId: data.etapaId || null,
+    },
+  });
+  revalidatePath("/invitados");
+  return invitado;
+}
+
+export async function actualizarInvitado(id: string, data: Partial<DatosInvitado>) {
+  await requireEditor();
+  const payload: Record<string, any> = {};
+  if ("nombre" in data) {
+    if (!data.nombre?.trim()) throw new Error("El nombre es obligatorio.");
+    payload.nombre = data.nombre.trim();
+  }
+  if ("empresa" in data) payload.empresa = data.empresa?.trim() || null;
+  if ("telefono" in data) payload.telefono = data.telefono?.trim() || null;
+  if ("correo" in data) payload.correo = data.correo?.trim() || null;
+  if ("notas" in data) payload.notas = data.notas?.trim() || null;
+  if ("etapaId" in data) payload.etapaId = data.etapaId || null;
+
+  await prisma.invitado.update({ where: { id }, data: payload });
+  revalidatePath("/invitados");
+}
+
+export async function eliminarInvitado(id: string) {
+  await requireEditor();
+  await prisma.invitado.delete({ where: { id } });
+  revalidatePath("/invitados");
+}
+
+export async function eliminarInvitadosMasivo(ids: string[]) {
+  await requireEditor();
+  if (ids.length === 0) return;
+  await prisma.invitado.deleteMany({ where: { id: { in: ids } } });
+  revalidatePath("/invitados");
+}
+
+export async function asignarEtapaInvitadosMasivo(ids: string[], etapaId: string | null) {
+  await requireEditor();
+  if (ids.length === 0) return;
+  await prisma.invitado.updateMany({ where: { id: { in: ids } }, data: { etapaId } });
+  revalidatePath("/invitados");
+}
+
+// Importación masiva desde Excel: el navegador ya parseó el archivo y
+// manda las filas como JSON (nombre es la única columna obligatoria).
+export async function importarInvitadosExcel(
+  eventoId: string,
+  filas: { nombre: string; empresa?: string; telefono?: string; correo?: string; notas?: string }[]
+) {
+  await requireEditor();
+  const validas = filas
+    .map((f) => ({
+      eventoId,
+      nombre: f.nombre?.trim() || "",
+      empresa: f.empresa?.trim() || null,
+      telefono: f.telefono?.trim() || null,
+      correo: f.correo?.trim() || null,
+      notas: f.notas?.trim() || null,
+    }))
+    .filter((f) => f.nombre);
+
+  if (validas.length === 0) throw new Error("No se encontró ninguna fila con nombre válido en el archivo.");
+
+  const creados = await prisma.$transaction(validas.map((f) => prisma.invitado.create({ data: f })));
+  revalidatePath("/invitados");
+  return creados;
+}

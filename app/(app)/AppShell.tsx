@@ -10,6 +10,7 @@ const TABS = [
   { href: "/tablero", label: "Tablero" },
   { href: "/mapa", label: "Mapa" },
   { href: "/espacios", label: "Ficha de stand" },
+  { href: "/invitados", label: "Invitados" },
   { href: "/obra", label: "Obra" },
   { href: "/calendario", label: "Calendario" },
   { href: "/incumplimientos", label: "Incumplimientos" },

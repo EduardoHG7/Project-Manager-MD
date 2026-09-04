@@ -54,10 +54,45 @@ model Evento {
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  espacios    Espacio[]
-  actividades EventoActividad[]
+  espacios       Espacio[]
+  actividades    EventoActividad[]
+  invitados      Invitado[]
+  etapasInvitado EtapaInvitado[]
 
   @@map("eventos")
+}
+
+// ── CRM de invitados: etapas personalizadas (el organizador define
+// las que necesite, ej. "Contactado", "Confirmado", "No asistirá") ──
+model EtapaInvitado {
+  id       String @id @default(cuid())
+  eventoId String
+  nombre   String
+  orden    Int    @default(0)
+
+  evento    Evento     @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  invitados Invitado[]
+
+  @@unique([eventoId, nombre])
+  @@map("etapas_invitado")
+}
+
+model Invitado {
+  id        String   @id @default(cuid())
+  eventoId  String
+  nombre    String
+  empresa   String?
+  telefono  String?
+  correo    String?
+  notas     String?
+  etapaId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evento Evento         @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  etapa  EtapaInvitado? @relation(fields: [etapaId], references: [id], onDelete: SetNull)
+
+  @@map("invitados")
 }
 
 // ── Reuniones y otras actividades sueltas del cronograma ──────────
