@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { actualizarEvento, archivarEvento } from "@/lib/actions";
+import { EliminarEventoButton } from "../EliminarEventoButton";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +10,17 @@ function paraInput(d: Date | null) {
   return d ? d.toISOString().slice(0, 10) : "";
 }
 
+function detalleEvento(espacios: number, invitados: number) {
+  const partes: string[] = [];
+  if (espacios > 0) partes.push(`${espacios} espacio${espacios === 1 ? "" : "s"}`);
+  if (invitados > 0) partes.push(`${invitados} invitado${invitados === 1 ? "" : "s"}`);
+  return partes.length > 0 ? partes.join(" y ") : undefined;
+}
+
 export default async function EditarEventoPage({ params }: { params: { id: string } }) {
   const evento = await prisma.evento.findUnique({
     where: { id: params.id },
-    include: { _count: { select: { espacios: true } } },
+    include: { _count: { select: { espacios: true, invitados: true } } },
   });
   if (!evento) notFound();
 
@@ -35,6 +43,13 @@ export default async function EditarEventoPage({ params }: { params: { id: strin
               {evento.activo ? "Archivar" : "Reactivar"}
             </button>
           </form>
+          <EliminarEventoButton
+            eventoId={evento.id}
+            nombre={evento.nombre}
+            detalle={detalleEvento(evento._count.espacios, evento._count.invitados)}
+            redirectTo="/admin/eventos"
+            className="btn btn-secondary"
+          />
         </div>
       </div>
 

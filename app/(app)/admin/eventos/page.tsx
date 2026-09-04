@@ -1,12 +1,23 @@
 import Link from "next/link";
-import { getEventos } from "@/lib/evento";
+import { prisma } from "@/lib/db";
 import { fmtFecha } from "@/lib/estados";
 import { CrearEventoForm } from "./CrearEventoForm";
+import { EliminarEventoButton } from "./EliminarEventoButton";
 
 export const dynamic = "force-dynamic";
 
+function detalleEvento(espacios: number, invitados: number) {
+  const partes: string[] = [];
+  if (espacios > 0) partes.push(`${espacios} espacio${espacios === 1 ? "" : "s"}`);
+  if (invitados > 0) partes.push(`${invitados} invitado${invitados === 1 ? "" : "s"}`);
+  return partes.length > 0 ? partes.join(" y ") : undefined;
+}
+
 export default async function AdminEventosPage() {
-  const eventos = await getEventos();
+  const eventos = await prisma.evento.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { espacios: true, invitados: true } } },
+  });
 
   return (
     <main className="page">
@@ -34,10 +45,15 @@ export default async function AdminEventosPage() {
                     {fmtFecha(e.fechaInicio)} – {fmtFecha(e.fechaFin)}
                   </td>
                   <td>{e.planoUrl ? "Sí" : "Sin subir"}</td>
-                  <td>
+                  <td style={{ display: "flex", gap: 10 }}>
                     <Link href={`/admin/eventos/${e.id}`} className="btn-ghost">
                       Editar →
                     </Link>
+                    <EliminarEventoButton
+                      eventoId={e.id}
+                      nombre={e.nombre}
+                      detalle={detalleEvento(e._count.espacios, e._count.invitados)}
+                    />
                   </td>
                 </tr>
               ))}

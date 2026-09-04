@@ -426,6 +426,15 @@ export async function archivarEvento(id: string, activo: boolean) {
   revalidatePath("/", "layout");
 }
 
+// Borra el evento y en cascada todo lo que le pertenece (espacios,
+// invitados, calendario, etc. — ver onDelete: Cascade en el esquema).
+// Irreversible: solo ADMIN.
+export async function eliminarEvento(id: string) {
+  await requireAdmin();
+  await prisma.evento.delete({ where: { id } });
+  revalidatePath("/", "layout");
+}
+
 // Solo las fechas del cronograma: a diferencia de actualizarEvento (nombre,
 // recinto, plano), esto lo puede ajustar Supervisor además de Admin — son
 // quienes coordinan el montaje en el día a día.
