@@ -936,23 +936,65 @@ export async function asignarEtapaInvitadosMasivo(ids: string[], etapaId: string
 // manda las filas como JSON (nombre es la única columna obligatoria).
 export async function importarInvitadosExcel(
   eventoId: string,
-  filas: { nombre: string; empresa?: string; telefono?: string; correo?: string; notas?: string }[]
+  filas: {
+    nombre: string;
+    empresa?: string;
+    telefono?: string;
+    correo?: string;
+    notas?: string;
+    etapaNombre?: string;
+  }[]
 ) {
   await requireEditor();
   const validas = filas
     .map((f) => ({
-      eventoId,
       nombre: f.nombre?.trim() || "",
       empresa: f.empresa?.trim() || null,
       telefono: f.telefono?.trim() || null,
       correo: f.correo?.trim() || null,
       notas: f.notas?.trim() || null,
+      etapaNombre: f.etapaNombre?.trim() || null,
     }))
     .filter((f) => f.nombre);
 
   if (validas.length === 0) throw new Error("No se encontró ninguna fila con nombre válido en el archivo.");
 
-  const creados = await prisma.$transaction(validas.map((f) => prisma.invitado.create({ data: f })));
+  // Si el archivo trae una columna de estatus/confirmación, cada valor distinto
+  // se convierte en una etapa de seguimiento (reutilizando las que ya existan).
+  const nombresEtapa = Array.from(new Set(validas.map((f) => f.etapaNombre).filter((n): n is string => !!n)));
+  const etapaIdPorNombre = new Map<string, string>();
+  if (nombresEtapa.length > 0) {
+    const existentes = await prisma.etapaInvitado.findMany({ where: { eventoId, nombre: { in: nombresEtapa } } });
+    for (const e of existentes) etapaIdPorNombre.set(e.nombre, e.id);
+    const faltantes = nombresEtapa.filter((n) => !etapaIdPorNombre.has(n));
+    if (faltantes.length > 0) {
+      const ultima = await prisma.etapaInvitado.findFirst({ where: { eventoId }, orderBy: { orden: "desc" } });
+      let orden = (ultima?.orden ?? -1) + 1;
+      for (const n of faltantes) {
+        const etapa = await prisma.etapaInvitado.create({ data: { eventoId, nombre: n, orden: orden++ } });
+        etapaIdPorNombre.set(n, etapa.id);
+      }
+    }
+  }
+
+  const creados = await prisma.$transaction(
+    validas.map((f) =>
+      prisma.invitado.create({
+        data: {
+          eventoId,
+          nombre: f.nombre,
+          empresa: f.empresa,
+          telefono: f.telefono,
+          correo: f.correo,
+          notas: f.notas,
+          etapaId: f.etapaNombre ? etapaIdPorNombre.get(f.etapaNombre) ?? null : null,
+        },
+      })
+    )
+  );
   revalidatePath("/invitados");
-  return creados;
+  return {
+    invitados: creados,
+    etapas: nombresEtapa.map((n) => ({ id: etapaIdPorNombre.get(n)!, nombre: n })),
+  };
 }

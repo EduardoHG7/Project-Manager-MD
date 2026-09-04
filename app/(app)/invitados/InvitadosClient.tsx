@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   crearInvitado,
   actualizarInvitado,
@@ -39,8 +38,8 @@ export function InvitadosClient({
   etapas: Etapa[];
   invitados: Invitado[];
 }) {
-  const router = useRouter();
   const [filas, setFilas] = useState(invitados);
+  const [etapasState, setEtapasState] = useState(etapas);
   const [isPending, startTransition] = useTransition();
 
   const [filtroEtapa, setFiltroEtapa] = useState<string | null>(null);
@@ -135,10 +134,10 @@ export function InvitadosClient({
     if (!n) return;
     startEtapaTransition(async () => {
       try {
-        await crearEtapaInvitado(eventoId, n);
+        const creada = await crearEtapaInvitado(eventoId, n);
+        setEtapasState((prev) => [...prev, { id: creada.id, nombre: creada.nombre }]);
         setNombreEtapa("");
         setNuevaEtapaAbierta(false);
-        router.refresh();
       } catch (err: any) {
         setEtapaError(err?.message || "No se pudo crear la etapa.");
       }
@@ -149,8 +148,9 @@ export function InvitadosClient({
     if (!confirm(`¿Eliminar la etapa "${etapa.nombre}"? Los invitados en esta etapa quedarán sin etapa.`)) return;
     startEtapaTransition(async () => {
       await eliminarEtapaInvitado(etapa.id);
+      setEtapasState((prev) => prev.filter((e) => e.id !== etapa.id));
+      setFilas((prev) => prev.map((f) => (f.etapaId === etapa.id ? { ...f, etapaId: null } : f)));
       if (filtroEtapa === etapa.id) setFiltroEtapa(null);
-      router.refresh();
     });
   }
 
@@ -187,7 +187,7 @@ export function InvitadosClient({
         <button className={`btn ${filtroEtapa === null ? "btn-primary" : "btn-secondary"}`} onClick={() => setFiltroEtapa(null)}>
           Todos ({filas.length})
         </button>
-        {etapas.map((et) => (
+        {etapasState.map((et) => (
           <div key={et.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
             <button
               className={`btn ${filtroEtapa === et.id ? "btn-primary" : "btn-secondary"}`}
@@ -247,9 +247,9 @@ export function InvitadosClient({
           </button>
           <ImportarExcel
             eventoId={eventoId}
-            onImported={(nuevos) =>
+            onImported={(resultado) => {
               setFilas((prev) => [
-                ...nuevos.map((n) => ({
+                ...resultado.invitados.map((n) => ({
                   id: n.id,
                   nombre: n.nombre,
                   empresa: n.empresa,
@@ -259,8 +259,12 @@ export function InvitadosClient({
                   etapaId: n.etapaId,
                 })),
                 ...prev,
-              ])
-            }
+              ]);
+              setEtapasState((prev) => {
+                const existentes = new Set(prev.map((e) => e.id));
+                return [...prev, ...resultado.etapas.filter((e) => !existentes.has(e.id))];
+              });
+            }}
           />
         </div>
       )}
@@ -309,7 +313,7 @@ export function InvitadosClient({
             onChange={(e) => setSupervisorMasivo(e.target.value)}
           >
             <option value="">— Quitar etapa —</option>
-            {etapas.map((et) => (
+            {etapasState.map((et) => (
               <option key={et.id} value={et.id}>
                 {et.nombre}
               </option>
@@ -445,14 +449,14 @@ export function InvitadosClient({
                       onChange={(e) => guardarCampo(f, { etapaId: e.target.value || null })}
                     >
                       <option value="">— Sin etapa —</option>
-                      {etapas.map((et) => (
+                      {etapasState.map((et) => (
                         <option key={et.id} value={et.id}>
                           {et.nombre}
                         </option>
                       ))}
                     </select>
                   ) : (
-                    <span className="pill pill-soft">{etapas.find((et) => et.id === f.etapaId)?.nombre || "Sin etapa"}</span>
+                    <span className="pill pill-soft">{etapasState.find((et) => et.id === f.etapaId)?.nombre || "Sin etapa"}</span>
                   )}
                 </td>
                 {canEdit && (
