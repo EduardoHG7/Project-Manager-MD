@@ -184,11 +184,16 @@ export function ImportarExcel({
         accept=".xlsx,.xls,.csv"
         onChange={onFile}
         disabled={isPending}
-        style={{ display: "none" }}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden", pointerEvents: "none" }}
       />
-      <label htmlFor="import-excel-input" className="btn btn-secondary" style={{ cursor: isPending ? "not-allowed" : "pointer" }}>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        disabled={isPending}
+        onClick={() => inputRef.current?.click()}
+      >
         {isPending ? "Importando…" : "Importar desde Excel"}
-      </label>
+      </button>
       {mensaje && <p style={{ fontSize: 12.5, color: "var(--color-accent-700)", margin: "6px 0 0" }}>{mensaje}</p>}
       {error && <p className="error-text" style={{ margin: "6px 0 0" }}>{error}</p>}
     </div>
