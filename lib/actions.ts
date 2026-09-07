@@ -81,7 +81,15 @@ export async function actualizarEstadoEspacio(espacioId: string, estado: string)
 
 export async function actualizarEspacio(espacioId: string, data: Record<string, any>) {
   await requireEditor();
-  const camposTexto = ["medidas", "puntosLuz", "pisoTarima"];
+  const camposTexto = [
+    "medidas",
+    "puntosLuz",
+    "pisoTarima",
+    "documentoInternetUrl",
+    "documentoMontacargasUrl",
+    "documentoVoltajeUrl",
+    "documentoRiggingUrl",
+  ];
   const camposNumericos = [
     "areaM2",
     "autosEnPiso",

@@ -10,6 +10,7 @@ import { ComentariosEspacio } from "./ComentariosEspacio";
 import { ContactoEspacio } from "./ContactoEspacio";
 import { EspecificacionesEspacio } from "./EspecificacionesEspacio";
 import { RequisitosMontajeEspacio } from "./RequisitosMontajeEspacio";
+import { DocumentosEspacio } from "./DocumentosEspacio";
 import { SupervisorAsignado } from "./SupervisorAsignado";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
@@ -265,6 +266,22 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 internetP2P={espacio.internetP2P}
                 internetSalidaAdicional={espacio.internetSalidaAdicional}
                 internetIpPublica={espacio.internetIpPublica}
+              />
+            </tbody>
+          </table>
+
+          <h6 className="text-muted" style={{ marginTop: 24 }}>
+            Documentos
+          </h6>
+          <table className="table">
+            <tbody>
+              <DocumentosEspacio
+                espacioId={espacio.id}
+                canEdit={canEdit}
+                documentoInternetUrl={espacio.documentoInternetUrl}
+                documentoMontacargasUrl={espacio.documentoMontacargasUrl}
+                documentoVoltajeUrl={espacio.documentoVoltajeUrl}
+                documentoRiggingUrl={espacio.documentoRiggingUrl}
               />
             </tbody>
           </table>
