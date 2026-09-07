@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -44,20 +44,32 @@ export default async function FichaStandPage({ params }: { params: { numero: str
   const session = await getServerSession(authOptions);
   const canEdit = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 
-  const espacio = await prisma.espacio.findUnique({
+  const include = {
+    distribuidor: true,
+    proveedor: true,
+    etapas: { orderBy: { orden: "asc" as const } },
+    versiones: { orderBy: { fecha: "desc" as const }, include: { subidoPor: true, revisadoPor: true } },
+    materiales: { orderBy: { orden: "asc" as const } },
+    pins: true,
+    incumplimientos: { where: { estado: { not: "CERRADA" } } },
+    comentarios: { orderBy: { fecha: "desc" as const } },
+    supervisor: true,
+  };
+
+  let espacio = await prisma.espacio.findUnique({
     where: { eventoId_numero: { eventoId: evento.id, numero: params.numero } },
-    include: {
-      distribuidor: true,
-      proveedor: true,
-      etapas: { orderBy: { orden: "asc" } },
-      versiones: { orderBy: { fecha: "desc" }, include: { subidoPor: true, revisadoPor: true } },
-      materiales: { orderBy: { orden: "asc" } },
-      pins: true,
-      incumplimientos: { where: { estado: { not: "CERRADA" } } },
-      comentarios: { orderBy: { fecha: "desc" } },
-      supervisor: true,
-    },
+    include,
   });
+  // No coincidió con el número principal: puede ser uno de los "números
+  // adicionales" del stand (ej. Banco General también ocupa 101 y 102).
+  // Si lo encontramos así, redirigimos a la URL canónica (su número principal).
+  if (!espacio) {
+    const porNumeroAdicional = await prisma.espacio.findFirst({
+      where: { eventoId: evento.id, numerosAdicionales: { has: params.numero } },
+      select: { numero: true },
+    });
+    if (porNumeroAdicional) redirect(`/espacios/${encodeURIComponent(porNumeroAdicional.numero)}`);
+  }
   if (!espacio) notFound();
 
   const [proveedores, distribuidores, supervisores] = canEdit
@@ -77,7 +89,8 @@ export default async function FichaStandPage({ params }: { params: { numero: str
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h6 className="text-muted">
-            Espacio {espacio.numero} · {espacio.fila ? `Hall ${espacio.fila}` : espacio.categoria}
+            Espacio {[espacio.numero, ...espacio.numerosAdicionales].join(", ")} ·{" "}
+            {espacio.fila ? `Hall ${espacio.fila}` : espacio.categoria}
           </h6>
           <h2 style={{ margin: 0 }}>{espacio.nombre}</h2>
         </div>
@@ -189,6 +202,7 @@ export default async function FichaStandPage({ params }: { params: { numero: str
               <EspecificacionesEspacio
                 espacioId={espacio.id}
                 numero={espacio.numero}
+                numerosAdicionales={espacio.numerosAdicionales}
                 canEdit={canEdit}
                 medidas={espacio.medidas}
                 areaM2={espacio.areaM2}

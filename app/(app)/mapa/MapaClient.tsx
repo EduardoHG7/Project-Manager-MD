@@ -7,6 +7,7 @@ import { ESTADO_LABEL, ESTADO_FILL } from "@/lib/estados";
 export type EspacioMapa = {
   id: string;
   numero: string;
+  numerosAdicionales: string[];
   nombre: string;
   categoria: string;
   fila: string | null;
@@ -20,6 +21,10 @@ export type EspacioMapa = {
 };
 
 type Filtro = "todos" | "pend" | "obra" | "desv";
+
+function numerosLabel(e: EspacioMapa) {
+  return [e.numero, ...e.numerosAdicionales].join(", ");
+}
 
 function matchesFiltro(e: EspacioMapa, f: Filtro) {
   if (f === "todos") return true;
@@ -104,7 +109,7 @@ export function MapaClient({
                       <button
                         key={e.id}
                         className={`hotspot ${ESTADO_FILL[e.estado]}`}
-                        title={`${e.numero} · ${e.nombre} — ${e.tieneDesviacion ? "Desviación abierta" : ESTADO_LABEL[e.estado]}`}
+                        title={`${numerosLabel(e)} · ${e.nombre} — ${e.tieneDesviacion ? "Desviación abierta" : ESTADO_LABEL[e.estado]}`}
                         onClick={() => setSel(e.numero)}
                         style={{
                           left: `${e.x}%`,
@@ -146,7 +151,7 @@ export function MapaClient({
                             boxShadow: on ? "0 0 0 3px var(--color-accent)" : undefined,
                           }}
                         >
-                          <strong>{e.numero}</strong>
+                          <strong>{numerosLabel(e)}</strong>
                           <span style={{ fontSize: 11.5 }}>{e.nombre}</span>
                           <span style={{ fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: "auto", fontWeight: 700 }}>
                             {e.tieneDesviacion ? "Desviación" : ESTADO_LABEL[e.estado]}
@@ -185,7 +190,7 @@ export function MapaClient({
 
         {seleccionado && (
           <aside className="card elev-sm">
-            <h6 className="text-muted">Espacio {seleccionado.numero}</h6>
+            <h6 className="text-muted">Espacio {numerosLabel(seleccionado)}</h6>
             <h3 style={{ margin: 0 }}>{seleccionado.nombre}</h3>
             <span
               className={`pill ${seleccionado.tieneDesviacion ? "pill-red" : "pill-soft"}`}

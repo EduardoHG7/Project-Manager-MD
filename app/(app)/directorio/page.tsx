@@ -62,6 +62,7 @@ export default async function DirectorioPage() {
         espacios={espacios.map((e) => ({
           id: e.id,
           numero: e.numero,
+          numerosAdicionales: e.numerosAdicionales,
           nombre: e.nombre,
           categoria: e.categoria,
           medidas: e.medidas,

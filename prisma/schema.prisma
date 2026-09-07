@@ -142,6 +142,7 @@ model Espacio {
   id          String   @id @default(cuid())
   eventoId    String
   numero      String   // "22", "1M", "F-BANESI"...
+  numerosAdicionales String[] @default([]) // otros números de stand que ocupa el mismo expositor, ej. Banco General en 100, 101 y 102
   nombre      String   // marca / expositor
   categoria   String   @default("AUTOMOTRIZ") // AUTOMOTRIZ | FINANCIERO
   fila        String?  // A-E, para la vista de retícula

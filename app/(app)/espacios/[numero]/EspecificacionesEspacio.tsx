@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { actualizarEspacio, actualizarNumeroEspacio, crearDistribuidor } from "@/lib/actions";
+import { actualizarEspacio, actualizarNumeroEspacio, actualizarNumerosAdicionales, crearDistribuidor } from "@/lib/actions";
 import { fmtFecha } from "@/lib/estados";
 
 type Opcion = { id: string; nombre: string };
@@ -12,6 +12,7 @@ const NUEVO_GRUPO = "__nuevo__";
 export function EspecificacionesEspacio({
   espacioId,
   numero,
+  numerosAdicionales,
   canEdit,
   medidas,
   areaM2,
@@ -32,6 +33,7 @@ export function EspecificacionesEspacio({
 }: {
   espacioId: string;
   numero: string;
+  numerosAdicionales: string[];
   canEdit: boolean;
   medidas: string | null;
   areaM2: number | null;
@@ -71,6 +73,11 @@ export function EspecificacionesEspacio({
   const [numeroError, setNumeroError] = useState<string | null>(null);
   const [isPendingNumero, startNumeroTransition] = useTransition();
 
+  const [numerosAdicionalesActual, setNumerosAdicionalesActual] = useState(numerosAdicionales);
+  const [numerosAdicionalesInput, setNumerosAdicionalesInput] = useState(numerosAdicionales.join(", "));
+  const [numerosAdicionalesError, setNumerosAdicionalesError] = useState<string | null>(null);
+  const [isPendingNumerosAdicionales, startNumerosAdicionalesTransition] = useTransition();
+
   const [creandoGrupo, setCreandoGrupo] = useState(false);
   const [nuevoGrupoNombre, setNuevoGrupoNombre] = useState("");
   const [grupoError, setGrupoError] = useState<string | null>(null);
@@ -93,6 +100,20 @@ export function EspecificacionesEspacio({
       } catch (err: any) {
         setNumeroInput(numero);
         setNumeroError(err?.message || "No se pudo cambiar el número.");
+      }
+    });
+  }
+
+  function guardarNumerosAdicionales() {
+    setNumerosAdicionalesError(null);
+    if (numerosAdicionalesInput === numerosAdicionalesActual.join(", ")) return;
+    startNumerosAdicionalesTransition(async () => {
+      try {
+        const guardados = await actualizarNumerosAdicionales(espacioId, numerosAdicionalesInput);
+        setNumerosAdicionalesActual(guardados);
+        setNumerosAdicionalesInput(guardados.join(", "));
+      } catch (err: any) {
+        setNumerosAdicionalesError(err?.message || "No se pudieron guardar los números adicionales.");
       }
     });
   }
@@ -120,6 +141,10 @@ export function EspecificacionesEspacio({
         <tr>
           <td className="text-muted">Número de stand</td>
           <td style={{ textAlign: "right" }}>{numero}</td>
+        </tr>
+        <tr>
+          <td className="text-muted">Números adicionales</td>
+          <td style={{ textAlign: "right" }}>{numerosAdicionales.length > 0 ? numerosAdicionales.join(", ") : "—"}</td>
         </tr>
         <tr>
           <td className="text-muted">Medidas en planta</td>
@@ -188,6 +213,28 @@ export function EspecificacionesEspacio({
             }}
           />
           {numeroError && <p className="error-text" style={{ fontSize: 11, margin: "4px 0 0" }}>{numeroError}</p>}
+        </td>
+      </tr>
+      <tr>
+        <td className="text-muted">Números adicionales</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            style={{ textAlign: "right" }}
+            placeholder="ej. 101, 102"
+            value={numerosAdicionalesInput}
+            disabled={isPendingNumerosAdicionales}
+            onChange={(e) => setNumerosAdicionalesInput(e.target.value)}
+            onBlur={guardarNumerosAdicionales}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+          {numerosAdicionalesError && (
+            <p className="error-text" style={{ fontSize: 11, margin: "4px 0 0" }}>
+              {numerosAdicionalesError}
+            </p>
+          )}
         </td>
       </tr>
       <tr>

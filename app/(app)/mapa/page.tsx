@@ -27,6 +27,7 @@ export default async function MapaPage() {
   const data: EspacioMapa[] = espacios.map((e) => ({
     id: e.id,
     numero: e.numero,
+    numerosAdicionales: e.numerosAdicionales,
     nombre: e.nombre,
     categoria: e.categoria,
     fila: e.fila,

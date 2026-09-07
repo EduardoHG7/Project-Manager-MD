@@ -194,7 +194,9 @@ export async function actualizarNumeroEspacio(espacioId: string, nuevoNumero: st
   if (!actual) throw new Error("Espacio no encontrado.");
   if (n === actual.numero) return n;
 
-  const existe = await prisma.espacio.findUnique({ where: { eventoId_numero: { eventoId: actual.eventoId, numero: n } } });
+  const existe = await prisma.espacio.findFirst({
+    where: { eventoId: actual.eventoId, id: { not: espacioId }, OR: [{ numero: n }, { numerosAdicionales: { has: n } }] },
+  });
   if (existe) throw new Error(`Ya existe un espacio con el número "${n}".`);
 
   await prisma.espacio.update({ where: { id: espacioId }, data: { numero: n } });
@@ -204,6 +206,45 @@ export async function actualizarNumeroEspacio(espacioId: string, nuevoNumero: st
   revalidatePath("/tablero");
   revalidatePath("/calendario");
   return n;
+}
+
+// Otros números de stand que ocupa el mismo espacio, ej. Banco General en
+// 100, 101 y 102: un solo expositor con un solo Ficha, pero que se puede
+// buscar por cualquiera de sus números. Valida que ninguno choque con el
+// número principal o los números adicionales de otro espacio del mismo
+// evento, para que la búsqueda por número siempre sea inequívoca.
+export async function actualizarNumerosAdicionales(espacioId: string, texto: string) {
+  await requireEditor();
+  const actual = await prisma.espacio.findUnique({ where: { id: espacioId }, select: { eventoId: true, numero: true } });
+  if (!actual) throw new Error("Espacio no encontrado.");
+
+  const numeros = Array.from(
+    new Set(
+      texto
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
+  ).filter((n) => n !== actual.numero);
+
+  if (numeros.length > 0) {
+    const otros = await prisma.espacio.findMany({
+      where: { eventoId: actual.eventoId, id: { not: espacioId } },
+      select: { numero: true, numerosAdicionales: true, nombre: true },
+    });
+    for (const n of numeros) {
+      const choque = otros.find((o) => o.numero === n || o.numerosAdicionales.includes(n));
+      if (choque) throw new Error(`El número "${n}" ya pertenece al stand "${choque.numero}" (${choque.nombre}).`);
+    }
+  }
+
+  await prisma.espacio.update({ where: { id: espacioId }, data: { numerosAdicionales: numeros } });
+  revalidatePath("/espacios");
+  revalidatePath("/directorio");
+  revalidatePath("/mapa");
+  revalidatePath("/tablero");
+  revalidatePath("/calendario");
+  return numeros;
 }
 
 export async function actualizarEtapa(espacioId: string, disciplina: string, estado: string, detalle?: string) {

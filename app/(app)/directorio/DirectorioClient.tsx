@@ -16,6 +16,7 @@ import { AccesoExpositor } from "./AccesoExpositor";
 type Espacio = {
   id: string;
   numero: string;
+  numerosAdicionales: string[];
   nombre: string;
   categoria: string;
   medidas: string | null;
@@ -202,7 +203,15 @@ export function DirectorioClient({
                     <input type="checkbox" checked={seleccionados.has(e.id)} onChange={() => toggleSeleccion(e.id)} />
                   </td>
                 )}
-                <td style={{ fontWeight: 700 }}>{e.numero}</td>
+                <td style={{ fontWeight: 700 }}>
+                  {e.numero}
+                  {e.numerosAdicionales.length > 0 && (
+                    <span className="text-muted" style={{ fontWeight: 400, fontSize: 11.5 }}>
+                      {" "}
+                      +{e.numerosAdicionales.join(", ")}
+                    </span>
+                  )}
+                </td>
                 <td>
                   {canEdit ? (
                     <input
