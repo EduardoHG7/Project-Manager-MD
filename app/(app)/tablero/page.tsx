@@ -79,6 +79,18 @@ export default async function TableroPage() {
     .filter((e) => e.usaRigging === true)
     .map((e) => ({ numero: e.numero, nombre: e.nombre }));
 
+  const [invitados, etapasInvitado] = await Promise.all([
+    prisma.invitado.findMany({ where: { eventoId: evento.id }, select: { etapaId: true } }),
+    prisma.etapaInvitado.findMany({ where: { eventoId: evento.id }, orderBy: { orden: "asc" } }),
+  ]);
+  const totalContactos = invitados.length;
+  const contactosPorEtapa = etapasInvitado.map((et) => ({
+    id: et.id,
+    nombre: et.nombre,
+    n: invitados.filter((i) => i.etapaId === et.id).length,
+  }));
+  const contactosSinEtapa = invitados.filter((i) => !i.etapaId).length;
+
   const todosIncump = await prisma.incumplimiento.findMany({
     where: { espacio: { eventoId: evento.id }, estado: { not: "CERRADA" } },
     select: { espacioId: true, fechaLimite: true },
@@ -112,6 +124,44 @@ export default async function TableroPage() {
             <span className={`kpi-bar ${ESTADO_FILL[k]}`} style={{ width: `${total ? (counts[k] / total) * 100 : 0}%` }} />
           </Link>
         ))}
+      </div>
+
+      <h6 className="text-muted" style={{ marginTop: 32 }}>
+        Contactos
+      </h6>
+      <div
+        className="kpi-row"
+        style={{ gridTemplateColumns: `repeat(${1 + contactosPorEtapa.length + (contactosSinEtapa ? 1 : 0)}, 1fr)`, marginTop: 8 }}
+      >
+        <Link href="/invitados" className="kpi" style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="text-muted" style={{ fontSize: 12 }}>
+            Registrados
+          </span>
+          <span className="kpi-n">{totalContactos}</span>
+        </Link>
+        {contactosPorEtapa.map((et) => (
+          <Link key={et.id} href="/invitados" className="kpi" style={{ textDecoration: "none", color: "inherit" }}>
+            <span className="text-muted" style={{ fontSize: 12 }}>
+              {et.nombre}
+            </span>
+            <span className="kpi-n">{et.n}</span>
+            <span className="text-muted" style={{ fontSize: 11 }}>
+              {totalContactos ? Math.round((et.n / totalContactos) * 100) : 0}%
+            </span>
+            <span
+              className="kpi-bar"
+              style={{ width: `${totalContactos ? (et.n / totalContactos) * 100 : 0}%`, background: "var(--color-neutral-900)" }}
+            />
+          </Link>
+        ))}
+        {contactosSinEtapa > 0 && (
+          <Link href="/invitados" className="kpi" style={{ textDecoration: "none", color: "inherit" }}>
+            <span className="text-muted" style={{ fontSize: 12 }}>
+              Sin etapa
+            </span>
+            <span className="kpi-n">{contactosSinEtapa}</span>
+          </Link>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 32, marginTop: 32 }}>
