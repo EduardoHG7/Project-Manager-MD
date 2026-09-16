@@ -3,7 +3,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEventoSeleccionado } from "@/lib/evento";
 import { SinEvento } from "../_shared/SinEvento";
-import { AgregarStandForm } from "./AgregarStandForm";
 import { DirectorioClient } from "./DirectorioClient";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +12,7 @@ export default async function DirectorioPage() {
   const session = await getServerSession(authOptions);
   if (!evento) return <SinEvento esAdmin={session?.user.rol === "ADMIN"} />;
   const canEdit = session?.user.rol === "ADMIN";
+  const esEditor = session?.user.rol === "ADMIN" || session?.user.rol === "SUPERVISOR";
 
   const espacios = await prisma.espacio.findMany({
     where: { eventoId: evento.id },
@@ -49,16 +49,11 @@ export default async function DirectorioPage() {
         {canEdit && " Haz clic en cualquier celda para editarla."}
       </p>
 
-      {canEdit && (
-        <AgregarStandForm
-          eventoId={evento.id}
-          distribuidores={distribuidores.map((d) => ({ id: d.id, nombre: d.nombre }))}
-          proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}
-        />
-      )}
-
       <DirectorioClient
+        eventoId={evento.id}
         canEdit={canEdit}
+        canAssignSupervisor={esEditor}
+        puedeAgregarStand={esEditor}
         espacios={espacios.map((e) => ({
           id: e.id,
           numero: e.numero,

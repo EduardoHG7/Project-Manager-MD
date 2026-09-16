@@ -146,20 +146,10 @@ export async function actualizarEspacio(espacioId: string, data: Record<string, 
   revalidatePath("/calendario");
 }
 
-// Admin puede asignar cualquier supervisor (o quitar la asignación).
-// Supervisor solo puede asignarse a sí mismo o quitar su propia asignación,
-// nunca tocar la asignación de otro supervisor.
+// ADMIN y SUPERVISOR pueden asignar cualquier supervisor a un stand (o quitar
+// la asignación) — no solo a sí mismos.
 export async function asignarSupervisorEspacio(espacioId: string, supervisorId: string | null) {
-  const session = await requireEditor();
-  if (session.user.rol === "SUPERVISOR") {
-    const espacio = await prisma.espacio.findUnique({ where: { id: espacioId }, select: { supervisorId: true } });
-    if (supervisorId !== null && supervisorId !== session.user.id) {
-      throw new Error("Como supervisor, solo puedes asignarte a ti mismo.");
-    }
-    if (supervisorId === null && espacio?.supervisorId && espacio.supervisorId !== session.user.id) {
-      throw new Error("Solo puedes quitar tu propia asignación.");
-    }
-  }
+  await requireEditor();
   await prisma.espacio.update({ where: { id: espacioId }, data: { supervisorId } });
   revalidatePath("/espacios");
   revalidatePath("/directorio");
@@ -168,22 +158,10 @@ export async function asignarSupervisorEspacio(espacioId: string, supervisorId: 
 
 // Asigna (o quita) un supervisor a varios stands de una sola vez, para no
 // tener que entrar espacio por espacio. Mismo criterio de permisos que la
-// versión individual: un Supervisor solo puede tocar su propia asignación.
+// versión individual: ADMIN y SUPERVISOR pueden asignar a cualquiera.
 export async function asignarSupervisorMasivo(espacioIds: string[], supervisorId: string | null) {
-  const session = await requireEditor();
+  await requireEditor();
   if (espacioIds.length === 0) return;
-
-  if (session.user.rol === "SUPERVISOR") {
-    if (supervisorId !== null && supervisorId !== session.user.id) {
-      throw new Error("Como supervisor, solo puedes asignarte a ti mismo.");
-    }
-    const espacios = await prisma.espacio.findMany({
-      where: { id: { in: espacioIds } },
-      select: { supervisorId: true },
-    });
-    const ajeno = espacios.some((e) => supervisorId === null && e.supervisorId && e.supervisorId !== session.user.id);
-    if (ajeno) throw new Error("Algunos de los stands seleccionados están asignados a otro supervisor.");
-  }
 
   await prisma.espacio.updateMany({ where: { id: { in: espacioIds } }, data: { supervisorId } });
   revalidatePath("/espacios");
@@ -647,12 +625,13 @@ function limpiarDatosEspacio(data: DatosEspacio) {
 }
 
 export async function crearEspacio(eventoId: string, x: number | null, y: number | null, data: DatosEspacio) {
-  await requireAdmin();
+  await requireEditor();
   if (!data.numero.trim() || !data.nombre.trim()) {
     throw new Error("Número y nombre son obligatorios.");
   }
+  let creado;
   try {
-    await prisma.espacio.create({
+    creado = await prisma.espacio.create({
       data: { eventoId, x, y, ...limpiarDatosEspacio(data) },
     });
   } catch (err: any) {
@@ -663,6 +642,7 @@ export async function crearEspacio(eventoId: string, x: number | null, y: number
   revalidatePath("/tablero");
   revalidatePath("/directorio");
   revalidatePath("/espacios");
+  return creado;
 }
 
 export async function actualizarEspacioAdmin(id: string, data: DatosEspacio) {

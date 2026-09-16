@@ -232,9 +232,6 @@ export default async function FichaStandPage({ params }: { params: { numero: str
               <SupervisorAsignado
                 espacioId={espacio.id}
                 canEdit={canEdit}
-                esAdmin={session?.user.rol === "ADMIN"}
-                userId={session?.user.id || ""}
-                userNombre={session?.user.name || ""}
                 supervisorId={espacio.supervisorId}
                 supervisorNombre={espacio.supervisor?.nombre ?? null}
                 supervisores={supervisores}

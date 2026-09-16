@@ -5,6 +5,21 @@ import { crearEspacio } from "@/lib/actions";
 
 type Opcion = { id: string; nombre: string };
 
+type EspacioCreado = {
+  id: string;
+  numero: string;
+  numerosAdicionales: string[];
+  nombre: string;
+  categoria: string;
+  medidas: string | null;
+  areaM2: number | null;
+  alturaMaxCm: number;
+  estado: string;
+  distribuidorId: string | null;
+  proveedorId: string | null;
+  supervisorId: string | null;
+};
+
 const CAMPOS_VACIOS = {
   numero: "",
   nombre: "",
@@ -19,10 +34,12 @@ export function AgregarStandForm({
   eventoId,
   distribuidores,
   proveedores,
+  onCreated,
 }: {
   eventoId: string;
   distribuidores: Opcion[];
   proveedores: Opcion[];
+  onCreated: (nuevo: EspacioCreado) => void;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [campos, setCampos] = useState(CAMPOS_VACIOS);
@@ -44,7 +61,7 @@ export function AgregarStandForm({
             setError(null);
             startTransition(async () => {
               try {
-                await crearEspacio(eventoId, null, null, {
+                const nuevo = await crearEspacio(eventoId, null, null, {
                   numero: campos.numero,
                   nombre: campos.nombre,
                   categoria: campos.categoria,
@@ -52,6 +69,20 @@ export function AgregarStandForm({
                   areaM2: campos.areaM2 ? Number(campos.areaM2) : null,
                   distribuidorId: campos.distribuidorId || null,
                   proveedorId: campos.proveedorId || null,
+                });
+                onCreated({
+                  id: nuevo.id,
+                  numero: nuevo.numero,
+                  numerosAdicionales: nuevo.numerosAdicionales,
+                  nombre: nuevo.nombre,
+                  categoria: nuevo.categoria,
+                  medidas: nuevo.medidas,
+                  areaM2: nuevo.areaM2,
+                  alturaMaxCm: nuevo.alturaMaxCm,
+                  estado: nuevo.estado,
+                  distribuidorId: nuevo.distribuidorId,
+                  proveedorId: nuevo.proveedorId,
+                  supervisorId: nuevo.supervisorId,
                 });
                 setCampos(CAMPOS_VACIOS);
                 setAbierto(false);

@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions";
 import { ESTADOS, ESTADO_LABEL, ESTADO_PILL } from "@/lib/estados";
 import { AccesoExpositor } from "./AccesoExpositor";
+import { AgregarStandForm } from "./AgregarStandForm";
 
 type Espacio = {
   id: string;
@@ -33,13 +34,19 @@ type Espacio = {
 type Opcion = { id: string; nombre: string };
 
 export function DirectorioClient({
+  eventoId,
   canEdit,
+  canAssignSupervisor,
+  puedeAgregarStand,
   espacios,
   distribuidores,
   proveedores,
   supervisores,
 }: {
+  eventoId: string;
   canEdit: boolean;
+  canAssignSupervisor: boolean;
+  puedeAgregarStand: boolean;
   espacios: Espacio[];
   distribuidores: Opcion[];
   proveedores: Opcion[];
@@ -140,29 +147,46 @@ export function DirectorioClient({
 
   return (
     <div style={{ marginTop: 16 }}>
-      {canEdit && seleccionados.size > 0 && (
+      {puedeAgregarStand && (
+        <AgregarStandForm
+          eventoId={eventoId}
+          distribuidores={distribuidores}
+          proveedores={proveedores}
+          onCreated={(nuevo) =>
+            setFilas((prev) => [{ ...nuevo, tieneDesviacion: false, usuario: null }, ...prev])
+          }
+        />
+      )}
+
+      {(canEdit || canAssignSupervisor) && seleccionados.size > 0 && (
         <div className="card elev-sm" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
           <strong style={{ fontSize: 13 }}>{seleccionados.size} seleccionados</strong>
-          <select
-            className="input"
-            style={{ maxWidth: 220 }}
-            value={supervisorMasivo}
-            disabled={isPendingMasivo}
-            onChange={(e) => setSupervisorMasivo(e.target.value)}
-          >
-            <option value="">— Quitar asignación —</option>
-            {supervisores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-          <button className="btn btn-primary" disabled={isPendingMasivo} onClick={aplicarSupervisorMasivo}>
-            {isPendingMasivo ? "Asignando…" : "Asignar supervisor"}
-          </button>
-          <button className="btn-ghost" disabled={isPendingEliminar} onClick={eliminarSeleccionados} style={{ color: "var(--color-accent)" }}>
-            {isPendingEliminar ? "Eliminando…" : "Eliminar seleccionados"}
-          </button>
+          {canAssignSupervisor && (
+            <>
+              <select
+                className="input"
+                style={{ maxWidth: 220 }}
+                value={supervisorMasivo}
+                disabled={isPendingMasivo}
+                onChange={(e) => setSupervisorMasivo(e.target.value)}
+              >
+                <option value="">— Quitar asignación —</option>
+                {supervisores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-primary" disabled={isPendingMasivo} onClick={aplicarSupervisorMasivo}>
+                {isPendingMasivo ? "Asignando…" : "Asignar supervisor"}
+              </button>
+            </>
+          )}
+          {canEdit && (
+            <button className="btn-ghost" disabled={isPendingEliminar} onClick={eliminarSeleccionados} style={{ color: "var(--color-accent)" }}>
+              {isPendingEliminar ? "Eliminando…" : "Eliminar seleccionados"}
+            </button>
+          )}
           <button className="btn-ghost" disabled={isPendingMasivo} onClick={() => setSeleccionados(new Set())}>
             Cancelar
           </button>
@@ -174,7 +198,7 @@ export function DirectorioClient({
         <table className="table">
           <thead>
             <tr>
-              {canEdit && (
+              {(canEdit || canAssignSupervisor) && (
                 <th style={{ width: 28 }}>
                   <input
                     type="checkbox"
@@ -198,7 +222,7 @@ export function DirectorioClient({
           <tbody>
             {filas.map((e) => (
               <tr key={e.id}>
-                {canEdit && (
+                {(canEdit || canAssignSupervisor) && (
                   <td>
                     <input type="checkbox" checked={seleccionados.has(e.id)} onChange={() => toggleSeleccion(e.id)} />
                   </td>
@@ -323,7 +347,7 @@ export function DirectorioClient({
                   )}
                 </td>
                 <td>
-                  {canEdit ? (
+                  {canAssignSupervisor ? (
                     <select
                       className="input"
                       style={{ minWidth: 130 }}
