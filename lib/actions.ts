@@ -985,6 +985,17 @@ export async function eliminarInvitadosMasivo(ids: string[]) {
   revalidatePath("/invitados");
 }
 
+// Borra TODOS los invitados del evento de una sola vez (sin depender de
+// ninguna selección ni filtro por etapa) — para reemplazar el listado
+// completo por uno nuevo sin arriesgarse a duplicados. Las etapas se
+// conservan (se pueden borrar aparte si ya no aplican). Solo ADMIN.
+export async function eliminarTodosLosInvitados(eventoId: string) {
+  await requireAdmin();
+  await prisma.invitado.deleteMany({ where: { eventoId } });
+  revalidatePath("/invitados");
+  revalidatePath("/tablero");
+}
+
 export async function asignarEtapaInvitadosMasivo(ids: string[], etapaId: string | null) {
   await requireEditor();
   if (ids.length === 0) return;

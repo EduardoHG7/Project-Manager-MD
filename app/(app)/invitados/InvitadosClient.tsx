@@ -6,6 +6,7 @@ import {
   actualizarInvitado,
   eliminarInvitado,
   eliminarInvitadosMasivo,
+  eliminarTodosLosInvitados,
   asignarEtapaInvitadosMasivo,
   crearEtapaInvitado,
   eliminarEtapaInvitado,
@@ -58,6 +59,9 @@ export function InvitadosClient({
   const [supervisorMasivo, setSupervisorMasivo] = useState("");
   const [errorMasivo, setErrorMasivo] = useState<string | null>(null);
   const [isPendingMasivo, startMasivoTransition] = useTransition();
+
+  const [isPendingEliminarTodos, startEliminarTodosTransition] = useTransition();
+  const [errorEliminarTodos, setErrorEliminarTodos] = useState<string | null>(null);
 
   const visibles = useMemo(
     () => (filtroEtapa === null ? filas : filas.filter((f) => f.etapaId === filtroEtapa)),
@@ -181,6 +185,26 @@ export function InvitadosClient({
     });
   }
 
+  function eliminarTodos() {
+    setErrorEliminarTodos(null);
+    if (filas.length === 0) return;
+    if (
+      !confirm(
+        `¿Eliminar TODOS los ${filas.length} invitados de este evento? Esto no se puede deshacer. Úsalo antes de subir un Excel nuevo para reemplazar la lista completa.`
+      )
+    )
+      return;
+    startEliminarTodosTransition(async () => {
+      try {
+        await eliminarTodosLosInvitados(eventoId);
+        setFilas([]);
+        setSeleccionados(new Set());
+      } catch (err: any) {
+        setErrorEliminarTodos(err?.message || "No se pudieron eliminar los invitados.");
+      }
+    });
+  }
+
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -266,7 +290,22 @@ export function InvitadosClient({
               });
             }}
           />
+          {esAdmin && (
+            <button
+              className="btn-ghost"
+              disabled={isPendingEliminarTodos || filas.length === 0}
+              onClick={eliminarTodos}
+              style={{ color: "var(--color-accent)" }}
+            >
+              {isPendingEliminarTodos ? "Eliminando…" : "Eliminar todos los invitados"}
+            </button>
+          )}
         </div>
+      )}
+      {errorEliminarTodos && (
+        <p className="error-text" style={{ fontSize: 12, marginTop: 4 }}>
+          {errorEliminarTodos}
+        </p>
       )}
 
       {formAbierto && (
