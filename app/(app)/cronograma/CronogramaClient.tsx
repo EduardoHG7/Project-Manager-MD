@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CategoriasCronograma } from "./CategoriasCronograma";
 import { TablaTareas } from "./TablaTareas";
 import { GanttTareas } from "./GanttTareas";
+import { TableroCronograma } from "./TableroCronograma";
 
 type Categoria = { id: string; nombre: string; orden: number };
 type Responsable = { id: string; nombre: string; iniciales: string | null; area: string | null; usuarioId: string | null };
@@ -42,7 +43,7 @@ export function CronogramaClient({
   const [responsablesState, setResponsablesState] = useState(responsables);
   const [tareasState, setTareasState] = useState(tareas);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
-  const [vista, setVista] = useState<"tabla" | "gantt">("tabla");
+  const [vista, setVista] = useState<"tablero" | "tabla" | "gantt">("tablero");
 
   const tareasFiltradas = useMemo(
     () => (filtroCategoriaId === null ? tareasState : tareasState.filter((t) => t.categoriaId === filtroCategoriaId)),
@@ -88,6 +89,9 @@ export function CronogramaClient({
       />
 
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button className={`btn ${vista === "tablero" ? "btn-primary" : "btn-secondary"}`} onClick={() => setVista("tablero")}>
+          Tablero
+        </button>
         <button className={`btn ${vista === "tabla" ? "btn-primary" : "btn-secondary"}`} onClick={() => setVista("tabla")}>
           Tabla
         </button>
@@ -96,7 +100,10 @@ export function CronogramaClient({
         </button>
       </div>
 
-      {vista === "tabla" ? (
+      {vista === "tablero" && (
+        <TableroCronograma categorias={categoriasState} responsables={responsablesState} tareas={tareasState} />
+      )}
+      {vista === "tabla" && (
         <TablaTareas
           eventoId={eventoId}
           canEdit={canEdit}
@@ -109,9 +116,8 @@ export function CronogramaClient({
           onTareasEliminadas={(ids) => setTareasState((prev) => prev.filter((t) => !ids.includes(t.id)))}
           onResponsableCreado={(r) => setResponsablesState((prev) => [...prev, r])}
         />
-      ) : (
-        <GanttTareas categorias={categoriasState} tareas={tareasFiltradas} />
       )}
+      {vista === "gantt" && <GanttTareas categorias={categoriasState} tareas={tareasFiltradas} />}
     </div>
   );
 }

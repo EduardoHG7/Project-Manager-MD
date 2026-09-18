@@ -243,11 +243,22 @@ export async function actualizarTareaProyecto(id: string, data: Partial<DatosTar
     payload.progreso = progreso;
   }
 
-  const fechaFinFinal = fechaCambio ? payload.fechaFin : actual.fechaFin;
-  const estadoNuevo = calcularEstado({ progreso, fechaFin: fechaFinFinal });
-  if (estadoNuevo !== actual.estado) {
-    registrar("estado", actual.estado, estadoNuevo);
-    payload.estado = estadoNuevo;
+  // El estado se recalcula solo (progreso/fechas cambiaron). Si en cambio
+  // el usuario edita el estado directamente (sin tocar progreso/fechas en
+  // el mismo guardado), se respeta como una anulación manual — hasta el
+  // próximo cambio de progreso o fechas, que lo vuelve a calcular.
+  const ESTADOS_VALIDOS = new Set(["NO_INICIADA", "EN_CURSO", "COMPLETADA", "ATRASADA"]);
+  if ("estado" in data && !fechaCambio && !("progreso" in data)) {
+    if (!ESTADOS_VALIDOS.has(data.estado || "")) throw new Error("Estado inválido.");
+    registrar("estado", actual.estado, data.estado);
+    payload.estado = data.estado;
+  } else {
+    const fechaFinFinal = fechaCambio ? payload.fechaFin : actual.fechaFin;
+    const estadoNuevo = calcularEstado({ progreso, fechaFin: fechaFinFinal });
+    if (estadoNuevo !== actual.estado) {
+      registrar("estado", actual.estado, estadoNuevo);
+      payload.estado = estadoNuevo;
+    }
   }
 
   await prisma.$transaction([

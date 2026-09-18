@@ -557,7 +557,23 @@ export function TablaTareas({
                     )}
                   </td>
                   <td>
-                    <span className={`pill ${TAREA_ESTADO_PILL[t.estado]}`}>{TAREA_ESTADO_LABEL[t.estado] || t.estado}</span>
+                    {canEdit ? (
+                      <select
+                        className="input"
+                        style={{ minWidth: 130 }}
+                        value={t.estado}
+                        disabled={isPending}
+                        onChange={(e) => guardarCampo(t, { estado: e.target.value })}
+                      >
+                        {Object.entries(TAREA_ESTADO_LABEL).map(([k, label]) => (
+                          <option key={k} value={k}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`pill ${TAREA_ESTADO_PILL[t.estado]}`}>{TAREA_ESTADO_LABEL[t.estado] || t.estado}</span>
+                    )}
                   </td>
                   <td>
                     {editable ? (
