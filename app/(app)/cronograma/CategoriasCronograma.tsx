@@ -6,6 +6,7 @@ import {
   eliminarCategoriaProyecto,
   sembrarCategoriasDefectoProyecto,
   sembrarTareasIniciales,
+  sincronizarResponsablesConUsuarios,
 } from "@/lib/actions-cronograma";
 import { NOMBRES_CATEGORIAS_DEFECTO } from "@/lib/cronograma";
 
@@ -23,6 +24,7 @@ export function CategoriasCronograma({
   onCategoriaCreada,
   onCategoriaEliminada,
   onCargaInicial,
+  onResponsablesSincronizados,
 }: {
   eventoId: string;
   canEdit: boolean;
@@ -34,6 +36,7 @@ export function CategoriasCronograma({
   onCategoriaCreada: (c: Categoria) => void;
   onCategoriaEliminada: (id: string) => void;
   onCargaInicial: (datos: { categorias: any[]; responsables: any[]; tareas: any[] }) => void;
+  onResponsablesSincronizados: (datos: { responsables: any[]; tareas: any[] }) => void;
 }) {
   const [nuevaAbierta, setNuevaAbierta] = useState(false);
   const [nombreNueva, setNombreNueva] = useState("");
@@ -78,6 +81,24 @@ export function CategoriasCronograma({
         onCargaInicial(datos);
       } catch (err: any) {
         setError(err?.message || "No se pudo cargar el cronograma inicial.");
+      }
+    });
+  }
+
+  function sincronizarResponsables() {
+    if (
+      !confirm(
+        "Esto reemplaza la lista de responsables por las cuentas del equipo (Admin/Supervisor/Lectura) que existen hoy en la plataforma. Las tareas que tenían asignado un responsable anterior quedan sin responsable — habrá que reasignarlas a mano. ¿Continuar?"
+      )
+    )
+      return;
+    setError(null);
+    startTransition(async () => {
+      try {
+        const datos = await sincronizarResponsablesConUsuarios(eventoId);
+        onResponsablesSincronizados(datos);
+      } catch (err: any) {
+        setError(err?.message || "No se pudo sincronizar los responsables.");
       }
     });
   }
@@ -158,6 +179,11 @@ export function CategoriasCronograma({
         {canEdit && tareas.length === 0 && (
           <button className="btn btn-secondary" disabled={isPending} onClick={cargarInicial}>
             {isPending ? "Cargando…" : "Cargar cronograma inicial (Excel)"}
+          </button>
+        )}
+        {esAdmin && (
+          <button className="btn-ghost" disabled={isPending} onClick={sincronizarResponsables}>
+            Sincronizar responsables con usuarios
           </button>
         )}
       </div>

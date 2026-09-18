@@ -142,6 +142,34 @@ export async function eliminarResponsable(id: string) {
   revalidatePath("/cronograma");
 }
 
+// Reemplaza la lista de responsables por las cuentas reales de la
+// plataforma (ADMIN/SUPERVISOR/LECTURA activas; EXPOSITOR queda fuera por
+// ser cuentas externas del portal de stands, no del equipo interno). Se
+// borran los responsables anteriores — las tareas que los tenían asignados
+// quedan sin responsable (onDelete: SetNull) para reasignar a mano.
+export async function sincronizarResponsablesConUsuarios(eventoId: string) {
+  await requireAdmin();
+
+  const usuarios = await prisma.usuario.findMany({
+    where: { activo: true, rol: { in: ["ADMIN", "SUPERVISOR", "LECTURA"] } },
+    orderBy: { nombre: "asc" },
+  });
+
+  await prisma.responsable.deleteMany({ where: { eventoId } });
+  if (usuarios.length > 0) {
+    await prisma.responsable.createMany({
+      data: usuarios.map((u) => ({ eventoId, nombre: u.nombre, usuarioId: u.id })),
+    });
+  }
+  revalidatePath("/cronograma");
+
+  const [responsables, tareas] = await Promise.all([
+    prisma.responsable.findMany({ where: { eventoId }, orderBy: { nombre: "asc" } }),
+    prisma.tareaProyecto.findMany({ where: { eventoId }, orderBy: [{ orden: "asc" }, { fechaInicio: "asc" }] }),
+  ]);
+  return { responsables, tareas };
+}
+
 // ── Tareas ────────────────────────────────────────────────────────────
 
 type DatosTarea = {

@@ -45,6 +45,22 @@ export function CronogramaClient({
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [vista, setVista] = useState<"tablero" | "tabla" | "gantt">("tablero");
 
+  function mapTarea(t: any): Tarea {
+    return {
+      id: t.id,
+      categoriaId: t.categoriaId,
+      responsableId: t.responsableId,
+      nombre: t.nombre,
+      fechaInicio: new Date(t.fechaInicio).toISOString().slice(0, 10),
+      duracionDias: t.duracionDias,
+      fechaFin: new Date(t.fechaFin).toISOString().slice(0, 10),
+      progreso: t.progreso,
+      estado: t.estado,
+      esHito: t.esHito,
+      observaciones: t.observaciones,
+    };
+  }
+
   const tareasFiltradas = useMemo(
     () => (filtroCategoriaId === null ? tareasState : tareasState.filter((t) => t.categoriaId === filtroCategoriaId)),
     [tareasState, filtroCategoriaId]
@@ -70,21 +86,13 @@ export function CronogramaClient({
           setResponsablesState(
             datos.responsables.map((r: any) => ({ id: r.id, nombre: r.nombre, iniciales: r.iniciales, area: r.area, usuarioId: r.usuarioId }))
           );
-          setTareasState(
-            datos.tareas.map((t: any) => ({
-              id: t.id,
-              categoriaId: t.categoriaId,
-              responsableId: t.responsableId,
-              nombre: t.nombre,
-              fechaInicio: new Date(t.fechaInicio).toISOString().slice(0, 10),
-              duracionDias: t.duracionDias,
-              fechaFin: new Date(t.fechaFin).toISOString().slice(0, 10),
-              progreso: t.progreso,
-              estado: t.estado,
-              esHito: t.esHito,
-              observaciones: t.observaciones,
-            }))
+          setTareasState(datos.tareas.map(mapTarea));
+        }}
+        onResponsablesSincronizados={(datos) => {
+          setResponsablesState(
+            datos.responsables.map((r: any) => ({ id: r.id, nombre: r.nombre, iniciales: r.iniciales, area: r.area, usuarioId: r.usuarioId }))
           );
+          setTareasState(datos.tareas.map(mapTarea));
         }}
       />
 
