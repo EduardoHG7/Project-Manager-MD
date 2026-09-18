@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { calcularEstado, calcularFechaFin } from "@/lib/cronograma";
+import { calcularEstado, calcularFechaFin, NOMBRES_CATEGORIAS_DEFECTO } from "@/lib/cronograma";
 
 // Duplicadas verbatim de lib/actions.ts (no están exportadas ahí) para no
 // tocar ese archivo más que en el punto donde se siembran las categorías.
@@ -66,6 +66,24 @@ export async function crearCategoriaProyecto(eventoId: string, nombre: string) {
   });
   revalidatePath("/cronograma");
   return categoria;
+}
+
+// Para eventos creados antes de que existiera este módulo (no pasaron por
+// el seed automático de crearEvento): carga las categorías por defecto que
+// todavía falten, sin duplicar las que ya existan.
+export async function sembrarCategoriasDefectoProyecto(eventoId: string) {
+  await requireEditor();
+  const existentes = await prisma.categoriaProyecto.findMany({ where: { eventoId }, select: { nombre: true, orden: true } });
+  const nombresExistentes = new Set(existentes.map((c) => c.nombre));
+  const faltantes = NOMBRES_CATEGORIAS_DEFECTO.filter((n) => !nombresExistentes.has(n));
+  if (faltantes.length === 0) return [];
+
+  let orden = Math.max(-1, ...existentes.map((c) => c.orden)) + 1;
+  const creadas = await prisma.$transaction(
+    faltantes.map((nombre) => prisma.categoriaProyecto.create({ data: { eventoId, nombre, orden: orden++ } }))
+  );
+  revalidatePath("/cronograma");
+  return creadas;
 }
 
 export async function eliminarCategoriaProyecto(id: string) {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { crearCategoriaProyecto, eliminarCategoriaProyecto } from "@/lib/actions-cronograma";
+import { crearCategoriaProyecto, eliminarCategoriaProyecto, sembrarCategoriasDefectoProyecto } from "@/lib/actions-cronograma";
+import { NOMBRES_CATEGORIAS_DEFECTO } from "@/lib/cronograma";
 
 type Categoria = { id: string; nombre: string; orden: number };
 type Tarea = { categoriaId: string };
@@ -44,6 +45,20 @@ export function CategoriasCronograma({
         setNuevaAbierta(false);
       } catch (err: any) {
         setError(err?.message || "No se pudo crear la categoría.");
+      }
+    });
+  }
+
+  const faltantes = NOMBRES_CATEGORIAS_DEFECTO.filter((n) => !categorias.some((c) => c.nombre === n));
+
+  function cargarPorDefecto() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const creadas = await sembrarCategoriasDefectoProyecto(eventoId);
+        creadas.forEach((c) => onCategoriaCreada({ id: c.id, nombre: c.nombre, orden: c.orden }));
+      } catch (err: any) {
+        setError(err?.message || "No se pudieron cargar las categorías por defecto.");
       }
     });
   }
@@ -116,6 +131,11 @@ export function CategoriasCronograma({
               + Nueva categoría
             </button>
           ))}
+        {canEdit && faltantes.length > 0 && (
+          <button className="btn btn-secondary" disabled={isPending} onClick={cargarPorDefecto}>
+            {isPending ? "Cargando…" : `Cargar categorías por defecto (${faltantes.length})`}
+          </button>
+        )}
       </div>
       {error && <p className="error-text" style={{ fontSize: 12, marginTop: 4 }}>{error}</p>}
     </div>
