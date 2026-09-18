@@ -191,6 +191,10 @@ main.page { padding: 22px 28px 48px; max-width: 1400px; margin: 0 auto; }
 .fill-en_fabricacion { background: #2f6fb0; border: 1px solid #1f4d7d; color: #fff; border-radius: 4px; }
 .fill-montado { background: #7c3aed; border: 1px solid #5b21b6; color: #fff; border-radius: 4px; }
 .fill-verificado { background: var(--color-neutral-900); border: 1px solid var(--color-neutral-900); color: var(--color-bg); border-radius: 4px; }
+.fill-no_iniciada { background: var(--color-neutral-400); border: 1px solid var(--color-neutral-600); color: var(--color-text); border-radius: 4px; }
+.fill-en_curso { background: #2f6fb0; border: 1px solid #1f4d7d; color: #fff; border-radius: 4px; }
+.fill-completada { background: #1f8a4d; border: 1px solid #145c33; color: #fff; border-radius: 4px; }
+.fill-atrasada { background: var(--color-accent); border: 1px solid var(--color-accent-700); color: #fff; border-radius: 4px; }
 
 .login-shell {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
