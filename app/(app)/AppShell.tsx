@@ -8,6 +8,7 @@ import { seleccionarEvento } from "@/lib/actions";
 
 const TABS = [
   { href: "/tablero", label: "Tablero" },
+  { href: "/cronograma", label: "Cronograma" },
   { href: "/mapa", label: "Mapa" },
   { href: "/espacios", label: "Ficha de stand" },
   { href: "/invitados", label: "Invitados" },

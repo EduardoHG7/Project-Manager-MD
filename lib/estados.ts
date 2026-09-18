@@ -72,6 +72,20 @@ export const VERSION_ESTADO_PILL: Record<string, string> = {
   RECHAZADA: "pill-red",
 };
 
+export const TAREA_ESTADO_LABEL: Record<string, string> = {
+  NO_INICIADA: "No iniciada",
+  EN_CURSO: "En curso",
+  COMPLETADA: "Completada",
+  ATRASADA: "Atrasada",
+};
+
+export const TAREA_ESTADO_PILL: Record<string, string> = {
+  NO_INICIADA: "pill-ghost",
+  EN_CURSO: "pill-soft",
+  COMPLETADA: "pill-green",
+  ATRASADA: "pill-red",
+};
+
 export function fmtFecha(d: Date | string | null | undefined) {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 import { evaluarConformidad, generarIncumplimientoSiAplica } from "@/lib/tolerancia";
 import { guardarArchivo } from "@/lib/upload";
 import { EVENTO_COOKIE } from "@/lib/evento";
+import { NOMBRES_CATEGORIAS_DEFECTO } from "@/lib/cronograma";
 
 export async function seleccionarEvento(eventoId: string) {
   cookies().set(EVENTO_COOKIE, eventoId, { path: "/", maxAge: 60 * 60 * 24 * 365 });
@@ -433,6 +434,10 @@ export async function crearEvento(formData: FormData) {
       horariosNota: String(formData.get("horariosNota") || "").trim() || null,
       planoUrl,
     },
+  });
+
+  await prisma.categoriaProyecto.createMany({
+    data: NOMBRES_CATEGORIAS_DEFECTO.map((nombre, orden) => ({ eventoId: evento.id, nombre, orden })),
   });
 
   cookies().set(EVENTO_COOKIE, evento.id, { path: "/", maxAge: 60 * 60 * 24 * 365 });

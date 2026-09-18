@@ -32,6 +32,8 @@ model Usuario {
   versionesSubidas   VersionEntrega[] @relation("VersionSubidaPor")
   versionesRevisadas VersionEntrega[] @relation("VersionRevisadaPor")
   comentarios        ComentarioEspacio[]
+  responsablesCronograma Responsable[]
+  tareaProyectoLogs      TareaProyectoLog[]
 
   @@map("usuarios")
 }
@@ -58,6 +60,9 @@ model Evento {
   actividades    EventoActividad[]
   invitados      Invitado[]
   etapasInvitado EtapaInvitado[]
+  categoriasProyecto   CategoriaProyecto[]
+  responsablesProyecto Responsable[]
+  tareasProyecto       TareaProyecto[]
 
   @@map("eventos")
 }
@@ -112,6 +117,91 @@ model EventoActividad {
   creadoPor Usuario? @relation(fields: [creadoPorId], references: [id], onDelete: SetNull)
 
   @@map("evento_actividades")
+}
+
+// ── Cronograma de proyecto: categorías personalizadas por evento (ej.
+// "Local", "Presupuesto", "Reglamento"...). Mismo patrón que EtapaInvitado:
+// el organizador las administra; se seedean 10 por defecto al crear el
+// evento pero ADMIN puede renombrar/agregar/borrar después.
+model CategoriaProyecto {
+  id       String @id @default(cuid())
+  eventoId String
+  nombre   String
+  orden    Int    @default(0)
+
+  evento Evento          @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  tareas TareaProyecto[]
+
+  @@unique([eventoId, nombre])
+  @@map("categorias_proyecto")
+}
+
+// ── Cronograma de proyecto: catálogo de responsables por evento. Puede ser
+// una persona/entidad sin cuenta (ej. "AGENCIA", "COMITÉ" — solo ADMIN o
+// SUPERVISOR editan sus tareas) o estar ligado a un Usuario real (esa
+// persona puede entonces actualizar progreso/observaciones de SUS tareas
+// aunque no tenga rol Admin/Supervisor).
+model Responsable {
+  id        String  @id @default(cuid())
+  eventoId  String
+  nombre    String
+  iniciales String?
+  area      String?
+  usuarioId String?
+
+  evento  Evento          @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  usuario Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  tareas  TareaProyecto[]
+
+  @@unique([eventoId, nombre])
+  @@unique([eventoId, usuarioId])
+  @@map("responsables_proyecto")
+}
+
+// ── Cronograma de proyecto: la actividad del plan. fechaFin y estado se
+// recalculan en el servidor en cada escritura (ver lib/cronograma.ts) —
+// nunca se editan directo desde el cliente.
+model TareaProyecto {
+  id            String   @id @default(cuid())
+  eventoId      String
+  categoriaId   String
+  responsableId String?
+  nombre        String
+  fechaInicio   DateTime
+  duracionDias  Int      @default(1)
+  fechaFin      DateTime // calculado: fechaInicio + duracionDias - 1
+  progreso      Int      @default(0) // 0-100
+  estado        String   @default("NO_INICIADA") // NO_INICIADA | EN_CURSO | COMPLETADA | ATRASADA (calculado)
+  esHito        Boolean  @default(false)
+  observaciones String?
+  adjuntos      String[] @default([]) // URLs de guardarArchivo/subirArchivoCliente
+  orden         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  evento      Evento             @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  categoria   CategoriaProyecto  @relation(fields: [categoriaId], references: [id])
+  responsable Responsable?       @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+  historial   TareaProyectoLog[]
+
+  @@map("tareas_proyecto")
+}
+
+// ── Cronograma de proyecto: bitácora de cambios de cada tarea, para el
+// panel de detalle (quién cambió qué campo y cuándo).
+model TareaProyectoLog {
+  id            String   @id @default(cuid())
+  tareaId       String
+  usuarioId     String?
+  campo         String // "progreso" | "estado" | "fechaInicio" | "duracionDias" | "responsableId" | "categoriaId" | "observaciones"
+  valorAnterior String?
+  valorNuevo    String?
+  fecha         DateTime @default(now())
+
+  tarea   TareaProyecto @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  usuario Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@map("tareas_proyecto_log")
 }
 
 // ── Grupo/distribuidor que representa la marca (ej. Autos Xtra) ──
