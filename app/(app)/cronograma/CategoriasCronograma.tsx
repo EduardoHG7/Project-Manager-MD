@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { crearCategoriaProyecto, eliminarCategoriaProyecto, sembrarCategoriasDefectoProyecto } from "@/lib/actions-cronograma";
+import {
+  crearCategoriaProyecto,
+  eliminarCategoriaProyecto,
+  sembrarCategoriasDefectoProyecto,
+  sembrarTareasIniciales,
+} from "@/lib/actions-cronograma";
 import { NOMBRES_CATEGORIAS_DEFECTO } from "@/lib/cronograma";
 
 type Categoria = { id: string; nombre: string; orden: number };
@@ -17,6 +22,7 @@ export function CategoriasCronograma({
   onFiltrar,
   onCategoriaCreada,
   onCategoriaEliminada,
+  onCargaInicial,
 }: {
   eventoId: string;
   canEdit: boolean;
@@ -27,6 +33,7 @@ export function CategoriasCronograma({
   onFiltrar: (id: string | null) => void;
   onCategoriaCreada: (c: Categoria) => void;
   onCategoriaEliminada: (id: string) => void;
+  onCargaInicial: (datos: { categorias: any[]; responsables: any[]; tareas: any[] }) => void;
 }) {
   const [nuevaAbierta, setNuevaAbierta] = useState(false);
   const [nombreNueva, setNombreNueva] = useState("");
@@ -59,6 +66,18 @@ export function CategoriasCronograma({
         creadas.forEach((c) => onCategoriaCreada({ id: c.id, nombre: c.nombre, orden: c.orden }));
       } catch (err: any) {
         setError(err?.message || "No se pudieron cargar las categorías por defecto.");
+      }
+    });
+  }
+
+  function cargarInicial() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const datos = await sembrarTareasIniciales(eventoId);
+        onCargaInicial(datos);
+      } catch (err: any) {
+        setError(err?.message || "No se pudo cargar el cronograma inicial.");
       }
     });
   }
@@ -134,6 +153,11 @@ export function CategoriasCronograma({
         {canEdit && faltantes.length > 0 && (
           <button className="btn btn-secondary" disabled={isPending} onClick={cargarPorDefecto}>
             {isPending ? "Cargando…" : `Cargar categorías por defecto (${faltantes.length})`}
+          </button>
+        )}
+        {canEdit && tareas.length === 0 && (
+          <button className="btn btn-secondary" disabled={isPending} onClick={cargarInicial}>
+            {isPending ? "Cargando…" : "Cargar cronograma inicial (Excel)"}
           </button>
         )}
       </div>

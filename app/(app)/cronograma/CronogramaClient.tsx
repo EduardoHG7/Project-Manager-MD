@@ -62,6 +62,27 @@ export function CronogramaClient({
           setCategoriasState((prev) => prev.filter((c) => c.id !== id));
           if (filtroCategoriaId === id) setFiltroCategoriaId(null);
         }}
+        onCargaInicial={(datos) => {
+          setCategoriasState(datos.categorias.map((c: any) => ({ id: c.id, nombre: c.nombre, orden: c.orden })));
+          setResponsablesState(
+            datos.responsables.map((r: any) => ({ id: r.id, nombre: r.nombre, iniciales: r.iniciales, area: r.area, usuarioId: r.usuarioId }))
+          );
+          setTareasState(
+            datos.tareas.map((t: any) => ({
+              id: t.id,
+              categoriaId: t.categoriaId,
+              responsableId: t.responsableId,
+              nombre: t.nombre,
+              fechaInicio: new Date(t.fechaInicio).toISOString().slice(0, 10),
+              duracionDias: t.duracionDias,
+              fechaFin: new Date(t.fechaFin).toISOString().slice(0, 10),
+              progreso: t.progreso,
+              estado: t.estado,
+              esHito: t.esHito,
+              observaciones: t.observaciones,
+            }))
+          );
+        }}
       />
 
       <TablaTareas
