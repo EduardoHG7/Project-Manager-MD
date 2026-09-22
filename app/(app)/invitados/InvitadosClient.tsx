@@ -24,7 +24,9 @@ type Invitado = {
   etapaId: string | null;
 };
 
-const CAMPOS_VACIOS = { nombre: "", empresa: "", telefono: "", correo: "", notas: "" };
+type CampoOrden = "nombre" | "empresa";
+
+const CAMPOS_VACIOS ={ nombre: "", empresa: "", telefono: "", correo: "", notas: "" };
 
 export function InvitadosClient({
   eventoId,
@@ -63,10 +65,51 @@ export function InvitadosClient({
   const [isPendingEliminarTodos, startEliminarTodosTransition] = useTransition();
   const [errorEliminarTodos, setErrorEliminarTodos] = useState<string | null>(null);
 
-  const visibles = useMemo(
-    () => (filtroEtapa === null ? filas : filas.filter((f) => f.etapaId === filtroEtapa)),
-    [filas, filtroEtapa]
-  );
+  const [orden, setOrden] = useState<{ campo: CampoOrden; dir: "asc" | "desc" } | null>(null);
+
+  const visibles = useMemo(() => {
+    const filtradas = filtroEtapa === null ? filas : filas.filter((f) => f.etapaId === filtroEtapa);
+    if (!orden) return filtradas;
+    const factor = orden.dir === "asc" ? 1 : -1;
+    return [...filtradas].sort((a, b) => {
+      const va = (a[orden.campo] || "").trim();
+      const vb = (b[orden.campo] || "").trim();
+      // Los vacíos siempre al final, sin importar la dirección.
+      if (!va && !vb) return 0;
+      if (!va) return 1;
+      if (!vb) return -1;
+      return factor * va.localeCompare(vb, "es", { sensitivity: "base", numeric: true });
+    });
+  }, [filas, filtroEtapa, orden]);
+
+  // Clic en el encabezado: A→Z, luego Z→A, luego vuelve al orden original.
+  function cambiarOrden(campo: CampoOrden) {
+    setOrden((prev) => {
+      if (!prev || prev.campo !== campo) return { campo, dir: "asc" };
+      if (prev.dir === "asc") return { campo, dir: "desc" };
+      return null;
+    });
+  }
+
+  function encabezadoOrdenable(campo: CampoOrden, etiqueta: string) {
+    const dir = orden && orden.campo === campo ? orden.dir : null;
+    const activo = dir !== null;
+    const flecha = dir === null ? "↕" : dir === "asc" ? "▲" : "▼";
+    return (
+      <th aria-sort={dir === null ? "none" : dir === "asc" ? "ascending" : "descending"}>
+        <button
+          type="button"
+          className="btn-ghost"
+          title={`Ordenar por ${etiqueta.toLowerCase()}`}
+          onClick={() => cambiarOrden(campo)}
+          style={{ padding: 0, font: "inherit", fontWeight: "inherit", color: "inherit", display: "inline-flex", gap: 4, alignItems: "center" }}
+        >
+          {etiqueta}
+          <span style={{ fontSize: 10, opacity: activo ? 1 : 0.4 }}>{flecha}</span>
+        </button>
+      </th>
+    );
+  }
 
   function actualizarLocal(id: string, cambios: Partial<Invitado>) {
     setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, ...cambios } : f)));
@@ -384,8 +427,8 @@ export function InvitadosClient({
                   />
                 </th>
               )}
-              <th>Nombre</th>
-              <th>Empresa</th>
+              {encabezadoOrdenable("nombre", "Nombre")}
+              {encabezadoOrdenable("empresa", "Empresa")}
               <th>Teléfono</th>
               <th>Correo</th>
               <th>Notas</th>
