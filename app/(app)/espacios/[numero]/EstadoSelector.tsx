@@ -1,11 +1,13 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { actualizarEstadoEspacio } from "@/lib/actions";
 import { ESTADOS, ESTADO_LABEL } from "@/lib/estados";
 
 export function EstadoSelector({ espacioId, estadoActual }: { espacioId: string; estadoActual: string }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <select
@@ -13,7 +15,12 @@ export function EstadoSelector({ espacioId, estadoActual }: { espacioId: string;
       style={{ width: "auto" }}
       defaultValue={estadoActual}
       disabled={isPending}
-      onChange={(e) => startTransition(() => actualizarEstadoEspacio(espacioId, e.target.value))}
+      onChange={(e) =>
+        startTransition(async () => {
+          await actualizarEstadoEspacio(espacioId, e.target.value);
+          router.refresh();
+        })
+      }
     >
       {ESTADOS.map((k) => (
         <option key={k} value={k}>
