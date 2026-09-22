@@ -30,6 +30,7 @@ export default async function TableroPage() {
     include: { distribuidor: true, etapas: true },
   });
   const total = espacios.length;
+  const totalAutosEnPiso = espacios.reduce((s, e) => s + (e.autosEnPiso || 0), 0);
 
   const counts: Record<string, number> = {};
   for (const e of ESTADOS) counts[e] = 0;
@@ -110,6 +111,15 @@ export default async function TableroPage() {
       <p className="text-muted" style={{ maxWidth: "62ch" }}>
         {evento.nombre} · {evento.recinto}
       </p>
+
+      <div className="kpi-row" style={{ gridTemplateColumns: "1fr", marginTop: 16, maxWidth: 220 }}>
+        <Link href="/mapa" className="kpi" style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="text-muted" style={{ fontSize: 12 }}>
+            Autos en piso
+          </span>
+          <span className="kpi-n">{totalAutosEnPiso}</span>
+        </Link>
+      </div>
 
       <div className="kpi-row" style={{ gridTemplateColumns: `repeat(${ESTADOS.length}, 1fr)`, marginTop: 20 }}>
         {ESTADOS.map((k) => (
