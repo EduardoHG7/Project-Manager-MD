@@ -399,8 +399,8 @@ export function TablaTareas({
                   />
                 </th>
               )}
-              <ThOrdenable label="Tarea" sortk="nombre" />
               <ThOrdenable label="Categoría" sortk="categoria" />
+              <ThOrdenable label="Tarea" sortk="nombre" />
               <ThOrdenable label="Responsable" sortk="responsable" />
               <ThOrdenable label="Inicio" sortk="fechaInicio" />
               <th>Duración</th>
@@ -424,23 +424,6 @@ export function TablaTareas({
                   )}
                   <td>
                     {canEdit ? (
-                      <input
-                        className="input"
-                        style={{ minWidth: 160 }}
-                        defaultValue={t.nombre}
-                        disabled={isPending}
-                        onBlur={(e) => {
-                          if (e.target.value !== t.nombre) guardarCampo(t, { nombre: e.target.value });
-                        }}
-                      />
-                    ) : (
-                      <>
-                        {t.nombre} {t.esHito && <span className="pill pill-soft">Hito</span>}
-                      </>
-                    )}
-                  </td>
-                  <td>
-                    {canEdit ? (
                       <select
                         className="input"
                         style={{ minWidth: 130 }}
@@ -456,6 +439,23 @@ export function TablaTareas({
                       </select>
                     ) : (
                       nombreCategoria(t.categoriaId)
+                    )}
+                  </td>
+                  <td>
+                    {canEdit ? (
+                      <input
+                        className="input"
+                        style={{ minWidth: 160 }}
+                        defaultValue={t.nombre}
+                        disabled={isPending}
+                        onBlur={(e) => {
+                          if (e.target.value !== t.nombre) guardarCampo(t, { nombre: e.target.value });
+                        }}
+                      />
+                    ) : (
+                      <>
+                        {t.nombre} {t.esHito && <span className="pill pill-soft">Hito</span>}
+                      </>
                     )}
                   </td>
                   <td>
