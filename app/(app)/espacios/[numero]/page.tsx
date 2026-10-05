@@ -103,6 +103,14 @@ export default async function FichaStandPage({ params }: { params: { numero: str
           <Link href={`/espacios/${encodeURIComponent(espacio.numero)}/comparar`} className="btn btn-secondary">
             Comparar render vs. obra
           </Link>
+          <a
+            href={`/checklist/${encodeURIComponent(espacio.numero)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-secondary"
+          >
+            Imprimir checklist (PDF)
+          </a>
         </div>
       </div>
 
