@@ -12,7 +12,10 @@ export async function subirArchivoCliente(file: File, carpeta: string): Promise<
   const res = await fetch("/api/subir-archivo", { method: "POST", body: fd });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || "No se pudo subir el archivo.");
+    if (res.status === 413) {
+      throw new Error("El archivo es demasiado pesado (máximo 4.5 MB). Reduce su tamaño e inténtalo de nuevo.");
+    }
+    throw new Error(data.error || `No se pudo subir el archivo (error ${res.status}).`);
   }
   return data.url;
 }

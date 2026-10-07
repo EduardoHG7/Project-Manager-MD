@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { actualizarEspacio } from "@/lib/actions";
 import { subirArchivoCliente } from "@/lib/subirArchivoCliente";
+import { comprimirImagen } from "@/lib/comprimirImagen";
 
 type FotoKey = "fotoFinal1Url" | "fotoFinal2Url";
 
@@ -33,7 +34,7 @@ export function FotosStandFinal({
     setSubiendo(key);
     (async () => {
       try {
-        const url = await subirArchivoCliente(file, "stand-final");
+        const url = await subirArchivoCliente(await comprimirImagen(file), "stand-final");
         await actualizarEspacio(espacioId, { [key]: url });
         setUrls((prev) => ({ ...prev, [key]: url }));
       } catch (err: any) {
