@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { activarUsuario, crearUsuarioOperacion, regenerarContrasenaUsuario } from "@/lib/actions";
+import { activarUsuario, cambiarRolUsuario, crearUsuarioOperacion, regenerarContrasenaUsuario } from "@/lib/actions";
 
 type Usuario = { id: string; nombre: string; email: string; rol: string; activo: boolean };
 
@@ -12,7 +12,7 @@ const ROLES = [
   { value: "LECTURA", label: "Lectura" },
 ];
 
-export function UsuariosClient({ usuarios }: { usuarios: Usuario[] }) {
+export function UsuariosClient({ usuarios, usuarioActualId }: { usuarios: Usuario[]; usuarioActualId: string }) {
   const router = useRouter();
   const [form, setForm] = useState({ nombre: "", email: "", rol: "LECTURA" });
   const [isPending, startTransition] = useTransition();
@@ -37,7 +37,35 @@ export function UsuariosClient({ usuarios }: { usuarios: Usuario[] }) {
             <tr key={u.id}>
               <td>{u.nombre}</td>
               <td className="text-muted">{u.email}</td>
-              <td>{ROLES.find((r) => r.value === u.rol)?.label || u.rol}</td>
+              <td>
+                {u.id === usuarioActualId ? (
+                  ROLES.find((r) => r.value === u.rol)?.label || u.rol
+                ) : (
+                  <select
+                    className="input"
+                    value={u.rol}
+                    disabled={isPending}
+                    onChange={(e) => {
+                      const rol = e.target.value;
+                      setError(null);
+                      startTransition(async () => {
+                        try {
+                          await cambiarRolUsuario(u.id, rol);
+                          router.refresh();
+                        } catch (err: any) {
+                          setError(err?.message || "No se pudo cambiar el rol.");
+                        }
+                      });
+                    }}
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </td>
               <td>
                 <span className={`pill ${u.activo ? "pill-ink" : "pill-ghost"}`}>{u.activo ? "Activo" : "Desactivado"}</span>
               </td>

@@ -18,6 +18,8 @@ export function EspecificacionesEspacio({
   areaM2,
   alturaMaxCm,
   autosEnPiso,
+  gafetesEntregados,
+  cortesiasPagadas,
   cargaElectricaKw,
   puntosLuz,
   usaRigging,
@@ -39,6 +41,8 @@ export function EspecificacionesEspacio({
   areaM2: number | null;
   alturaMaxCm: number;
   autosEnPiso: number | null;
+  gafetesEntregados: number | null;
+  cortesiasPagadas: number | null;
   cargaElectricaKw: number | null;
   puntosLuz: string | null;
   usaRigging: boolean | null;
@@ -58,6 +62,8 @@ export function EspecificacionesEspacio({
     areaM2: areaM2 ?? "",
     alturaMaxCm: alturaMaxCm ?? "",
     autosEnPiso: autosEnPiso ?? "",
+    gafetesEntregados: gafetesEntregados ?? "",
+    cortesiasPagadas: cortesiasPagadas ?? "",
     cargaElectricaKw: cargaElectricaKw ?? "",
     puntosLuz: puntosLuz || "",
     usaRigging: usaRigging === null ? "" : String(usaRigging),
@@ -161,6 +167,14 @@ export function EspecificacionesEspacio({
         <tr>
           <td className="text-muted">Autos en piso</td>
           <td style={{ textAlign: "right" }}>{autosEnPiso ?? "—"}</td>
+        </tr>
+        <tr>
+          <td className="text-muted">Gafetes entregados</td>
+          <td style={{ textAlign: "right" }}>{gafetesEntregados ?? "—"}</td>
+        </tr>
+        <tr>
+          <td className="text-muted">Cortesías pagadas</td>
+          <td style={{ textAlign: "right" }}>{cortesiasPagadas ?? "—"}</td>
         </tr>
         <tr>
           <td className="text-muted">Carga eléctrica</td>
@@ -295,6 +309,38 @@ export function EspecificacionesEspacio({
             disabled={isPending}
             onBlur={(e) => {
               if (e.target.value !== String(campos.autosEnPiso)) guardar({ autosEnPiso: e.target.value });
+            }}
+          />
+        </td>
+      </tr>
+      <tr>
+        <td className="text-muted">Gafetes entregados</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            style={{ textAlign: "right" }}
+            defaultValue={campos.gafetesEntregados}
+            disabled={isPending}
+            onBlur={(e) => {
+              if (e.target.value !== String(campos.gafetesEntregados)) guardar({ gafetesEntregados: e.target.value });
+            }}
+          />
+        </td>
+      </tr>
+      <tr>
+        <td className="text-muted">Cortesías pagadas</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            style={{ textAlign: "right" }}
+            defaultValue={campos.cortesiasPagadas}
+            disabled={isPending}
+            onBlur={(e) => {
+              if (e.target.value !== String(campos.cortesiasPagadas)) guardar({ cortesiasPagadas: e.target.value });
             }}
           />
         </td>

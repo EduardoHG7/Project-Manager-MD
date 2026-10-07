@@ -1,3 +1,5 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UsuariosClient } from "./UsuariosClient";
 
@@ -6,6 +8,7 @@ export const dynamic = "force-dynamic";
 const ORDEN_ROL: Record<string, number> = { ADMIN: 0, SUPERVISOR: 1, LECTURA: 2 };
 
 export default async function AdminUsuariosPage() {
+  const session = await getServerSession(authOptions);
   const usuariosDb = await prisma.usuario.findMany({
     where: { rol: { in: ["ADMIN", "SUPERVISOR", "LECTURA"] } },
     orderBy: { nombre: "asc" },
@@ -26,6 +29,7 @@ export default async function AdminUsuariosPage() {
         expositores se crean desde el Directorio.
       </p>
       <UsuariosClient
+        usuarioActualId={session?.user?.id ?? ""}
         usuarios={usuarios.map((u) => ({
           id: u.id,
           nombre: u.nombre,

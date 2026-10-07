@@ -217,6 +217,8 @@ export default async function FichaStandPage({ params }: { params: { numero: str
                 areaM2={espacio.areaM2}
                 alturaMaxCm={espacio.alturaMaxCm}
                 autosEnPiso={espacio.autosEnPiso}
+                gafetesEntregados={espacio.gafetesEntregados}
+                cortesiasPagadas={espacio.cortesiasPagadas}
                 cargaElectricaKw={espacio.cargaElectricaKw}
                 puntosLuz={espacio.puntosLuz}
                 usaRigging={espacio.usaRigging}

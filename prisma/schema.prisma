@@ -240,6 +240,8 @@ model Espacio {
   areaM2      Float?
   alturaMaxCm Float    @default(550)
   autosEnPiso Int?
+  gafetesEntregados Int?
+  cortesiasPagadas  Int?
 
   estado      String   @default("SIN_RENDER") // SIN_RENDER|EN_REVISION|APROBADO|EN_FABRICACION|MONTADO|VERIFICADO
 

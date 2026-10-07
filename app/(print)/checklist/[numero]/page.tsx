@@ -107,6 +107,8 @@ export default async function ChecklistStandPage({ params }: { params: { numero:
     ["Área", val(e.areaM2, " m²")],
     ["Altura máx. permitida", val(e.alturaMaxCm, " cm")],
     ["Autos en piso", val(e.autosEnPiso)],
+    ["Gafetes entregados", val(e.gafetesEntregados)],
+    ["Cortesías pagadas", val(e.cortesiasPagadas)],
     ["Carga eléctrica", val(e.cargaElectricaKw, " kW")],
     ["Puntos de luz", val(e.puntosLuz)],
     ["¿Usará rigging?", siNo(e.usaRigging)],

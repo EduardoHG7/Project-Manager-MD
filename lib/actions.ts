@@ -94,6 +94,8 @@ export async function actualizarEspacio(espacioId: string, data: Record<string, 
   const camposNumericos = [
     "areaM2",
     "autosEnPiso",
+    "gafetesEntregados",
+    "cortesiasPagadas",
     "cargaElectricaKw",
     "riggingPuntos",
     "manliftBrazoHorasMontaje",
@@ -750,6 +752,16 @@ export async function crearUsuarioOperacion(data: { nombre: string; email: strin
   }
   revalidatePath("/admin/usuarios");
   return { email, contrasena };
+}
+
+export async function cambiarRolUsuario(id: string, rol: string) {
+  const session = await requireAdmin();
+  if (!["ADMIN", "SUPERVISOR", "LECTURA"].includes(rol)) throw new Error("Rol inválido.");
+  if (session!.user.id === id) throw new Error("No puedes cambiar tu propio rol.");
+  const usuario = await prisma.usuario.findUniqueOrThrow({ where: { id } });
+  if (usuario.rol === "EXPOSITOR") throw new Error("Los accesos de expositor se administran desde el Directorio.");
+  await prisma.usuario.update({ where: { id }, data: { rol } });
+  revalidatePath("/admin/usuarios");
 }
 
 export async function activarUsuario(id: string, activo: boolean) {
