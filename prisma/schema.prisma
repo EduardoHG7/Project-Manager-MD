@@ -300,6 +300,10 @@ model Espacio {
   documentoVoltajeUrl      String?
   documentoRiggingUrl      String?
 
+  // ── Fotos del stand finalizado (dos, van también en el checklist PDF) ──
+  fotoFinal1Url String?
+  fotoFinal2Url String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

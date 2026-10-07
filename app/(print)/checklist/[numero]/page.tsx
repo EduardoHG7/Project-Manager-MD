@@ -217,6 +217,24 @@ export default async function ChecklistStandPage({ params }: { params: { numero:
       </div>
 
       <section className="ck-avoid-break">
+        <h2 className="ck-h">Stand finalizado</h2>
+        {!e.fotoFinal1Url && !e.fotoFinal2Url ? (
+          <p className="ck-empty">Sin fotos del stand finalizado.</p>
+        ) : (
+          <div className="ck-fotos">
+            {[e.fotoFinal1Url, e.fotoFinal2Url].map((url, i) =>
+              url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={url} alt={`Stand finalizado · foto ${i + 1}`} />
+              ) : (
+                <div key={i} className="ck-foto-vacia">Foto {i + 1} · sin subir</div>
+              )
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="ck-avoid-break">
         <h2 className="ck-h">Materiales y acabados</h2>
         {e.materiales.length === 0 ? (
           <p className="ck-empty">Sin elementos registrados.</p>
@@ -397,6 +415,9 @@ const CSS = `
   .ck-empty { color: #7d7979; font-style: italic; margin: 4px 0; }
   .ck-comments { list-style: none; padding: 0; margin: 0; }
   .ck-comments li { padding: 5px 0; border-bottom: 1px solid #eae7e7; break-inside: avoid; white-space: pre-wrap; }
+  .ck-fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ck-fotos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid #d7d3d3; border-radius: 3px; display: block; }
+  .ck-foto-vacia { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; border: 1px dashed #bab6b6; color: #7d7979; font-style: italic; }
   .ck-lines div { height: 22px; border-bottom: 1px solid #bab6b6; }
   .ck-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 48px; break-inside: avoid; }
   .ck-firma { font-size: 11.5px; }

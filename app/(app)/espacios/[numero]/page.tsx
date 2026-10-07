@@ -11,6 +11,7 @@ import { ContactoEspacio } from "./ContactoEspacio";
 import { EspecificacionesEspacio } from "./EspecificacionesEspacio";
 import { RequisitosMontajeEspacio } from "./RequisitosMontajeEspacio";
 import { DocumentosEspacio } from "./DocumentosEspacio";
+import { FotosStandFinal } from "./FotosStandFinal";
 import { SupervisorAsignado } from "./SupervisorAsignado";
 import { EstadoSelector } from "./EstadoSelector";
 import { EtapasEditor } from "./EtapasEditor";
@@ -129,6 +130,14 @@ export default async function FichaStandPage({ params }: { params: { numero: str
               <GaleriaArchivos renderUrls={espacio.versiones[0].renderUrls} mapaUrl={espacio.versiones[0].mapaUrl} />
             </>
           )}
+
+          <h6 className="text-muted" style={{ marginTop: 28 }}>Stand finalizado</h6>
+          <FotosStandFinal
+            espacioId={espacio.id}
+            canEdit={canEdit}
+            fotoFinal1Url={espacio.fotoFinal1Url}
+            fotoFinal2Url={espacio.fotoFinal2Url}
+          />
 
           <h6 className="text-muted" style={{ marginTop: 28 }}>Progreso por disciplina</h6>
           <EtapasEditor espacioId={espacio.id} etapas={espacio.etapas} canEdit={canEdit} />

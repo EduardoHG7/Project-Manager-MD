@@ -90,6 +90,8 @@ export async function actualizarEspacio(espacioId: string, data: Record<string, 
     "documentoMontacargasUrl",
     "documentoVoltajeUrl",
     "documentoRiggingUrl",
+    "fotoFinal1Url",
+    "fotoFinal2Url",
   ];
   const camposNumericos = [
     "areaM2",
