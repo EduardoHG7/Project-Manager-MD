@@ -109,6 +109,7 @@ export default async function ChecklistStandPage({ params }: { params: { numero:
     ["Autos en piso", val(e.autosEnPiso)],
     ["Gafetes entregados", val(e.gafetesEntregados)],
     ["Cortesías pagadas", val(e.cortesiasPagadas)],
+    ["Pases de carro", val(e.pasesCarro)],
     ["Carga eléctrica", val(e.cargaElectricaKw, " kW")],
     ["Puntos de luz", val(e.puntosLuz)],
     ["¿Usará rigging?", siNo(e.usaRigging)],

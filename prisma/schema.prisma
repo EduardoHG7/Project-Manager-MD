@@ -242,6 +242,7 @@ model Espacio {
   autosEnPiso Int?
   gafetesEntregados Int?
   cortesiasPagadas  Int?
+  pasesCarro        Int?
 
   estado      String   @default("SIN_RENDER") // SIN_RENDER|EN_REVISION|APROBADO|EN_FABRICACION|MONTADO|VERIFICADO
 

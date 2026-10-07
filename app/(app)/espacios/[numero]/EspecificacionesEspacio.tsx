@@ -20,6 +20,7 @@ export function EspecificacionesEspacio({
   autosEnPiso,
   gafetesEntregados,
   cortesiasPagadas,
+  pasesCarro,
   cargaElectricaKw,
   puntosLuz,
   usaRigging,
@@ -43,6 +44,7 @@ export function EspecificacionesEspacio({
   autosEnPiso: number | null;
   gafetesEntregados: number | null;
   cortesiasPagadas: number | null;
+  pasesCarro: number | null;
   cargaElectricaKw: number | null;
   puntosLuz: string | null;
   usaRigging: boolean | null;
@@ -64,6 +66,7 @@ export function EspecificacionesEspacio({
     autosEnPiso: autosEnPiso ?? "",
     gafetesEntregados: gafetesEntregados ?? "",
     cortesiasPagadas: cortesiasPagadas ?? "",
+    pasesCarro: pasesCarro ?? "",
     cargaElectricaKw: cargaElectricaKw ?? "",
     puntosLuz: puntosLuz || "",
     usaRigging: usaRigging === null ? "" : String(usaRigging),
@@ -175,6 +178,10 @@ export function EspecificacionesEspacio({
         <tr>
           <td className="text-muted">Cortesías pagadas</td>
           <td style={{ textAlign: "right" }}>{cortesiasPagadas ?? "—"}</td>
+        </tr>
+        <tr>
+          <td className="text-muted">Pases de carro</td>
+          <td style={{ textAlign: "right" }}>{pasesCarro ?? "—"}</td>
         </tr>
         <tr>
           <td className="text-muted">Carga eléctrica</td>
@@ -341,6 +348,22 @@ export function EspecificacionesEspacio({
             disabled={isPending}
             onBlur={(e) => {
               if (e.target.value !== String(campos.cortesiasPagadas)) guardar({ cortesiasPagadas: e.target.value });
+            }}
+          />
+        </td>
+      </tr>
+      <tr>
+        <td className="text-muted">Pases de carro</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            style={{ textAlign: "right" }}
+            defaultValue={campos.pasesCarro}
+            disabled={isPending}
+            onBlur={(e) => {
+              if (e.target.value !== String(campos.pasesCarro)) guardar({ pasesCarro: e.target.value });
             }}
           />
         </td>
