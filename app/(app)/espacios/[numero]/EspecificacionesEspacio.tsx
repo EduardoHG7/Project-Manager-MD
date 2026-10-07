@@ -23,6 +23,8 @@ export function EspecificacionesEspacio({
   pasesCarro,
   cargaElectricaKw,
   puntosLuz,
+  puntos110v,
+  puntos220v,
   usaRigging,
   proveedorId,
   proveedorNombre,
@@ -47,6 +49,8 @@ export function EspecificacionesEspacio({
   pasesCarro: number | null;
   cargaElectricaKw: number | null;
   puntosLuz: string | null;
+  puntos110v: number | null;
+  puntos220v: number | null;
   usaRigging: boolean | null;
   proveedorId: string | null;
   proveedorNombre: string | null;
@@ -68,7 +72,8 @@ export function EspecificacionesEspacio({
     cortesiasPagadas: cortesiasPagadas ?? "",
     pasesCarro: pasesCarro ?? "",
     cargaElectricaKw: cargaElectricaKw ?? "",
-    puntosLuz: puntosLuz || "",
+    puntos110v: puntos110v ?? "",
+    puntos220v: puntos220v ?? "",
     usaRigging: usaRigging === null ? "" : String(usaRigging),
     proveedorId: proveedorId || "",
     distribuidorId: distribuidorId || "",
@@ -188,9 +193,19 @@ export function EspecificacionesEspacio({
           <td style={{ textAlign: "right" }}>{cargaElectricaKw ? `${cargaElectricaKw} kW` : "—"}</td>
         </tr>
         <tr>
-          <td className="text-muted">Puntos de luz</td>
-          <td style={{ textAlign: "right" }}>{puntosLuz || "—"}</td>
+          <td className="text-muted">Puntos de 110v</td>
+          <td style={{ textAlign: "right" }}>{puntos110v ?? "—"}</td>
         </tr>
+        <tr>
+          <td className="text-muted">Puntos de 220v</td>
+          <td style={{ textAlign: "right" }}>{puntos220v ?? "—"}</td>
+        </tr>
+        {puntosLuz && (
+        <tr>
+          <td className="text-muted">Puntos de luz (nota anterior)</td>
+          <td style={{ textAlign: "right" }}>{puntosLuz}</td>
+        </tr>
+      )}
         <tr>
           <td className="text-muted">¿Usará Rigging?</td>
           <td style={{ textAlign: "right" }}>{usaRigging === null ? "—" : usaRigging ? "Sí" : "No"}</td>
@@ -384,19 +399,43 @@ export function EspecificacionesEspacio({
         </td>
       </tr>
       <tr>
-        <td className="text-muted">Puntos de luz</td>
+        <td className="text-muted">Puntos de 110v</td>
         <td style={{ textAlign: "right" }}>
           <input
             className="input"
+            type="number"
+            min={0}
             style={{ textAlign: "right" }}
-            defaultValue={campos.puntosLuz}
+            defaultValue={campos.puntos110v}
             disabled={isPending}
             onBlur={(e) => {
-              if (e.target.value !== campos.puntosLuz) guardar({ puntosLuz: e.target.value });
+              if (e.target.value !== String(campos.puntos110v)) guardar({ puntos110v: e.target.value });
             }}
           />
         </td>
       </tr>
+      <tr>
+        <td className="text-muted">Puntos de 220v</td>
+        <td style={{ textAlign: "right" }}>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            style={{ textAlign: "right" }}
+            defaultValue={campos.puntos220v}
+            disabled={isPending}
+            onBlur={(e) => {
+              if (e.target.value !== String(campos.puntos220v)) guardar({ puntos220v: e.target.value });
+            }}
+          />
+        </td>
+      </tr>
+      {puntosLuz && (
+        <tr>
+          <td className="text-muted">Puntos de luz (nota anterior)</td>
+          <td style={{ textAlign: "right" }}>{puntosLuz}</td>
+        </tr>
+      )}
       <tr>
         <td className="text-muted">¿Usará Rigging?</td>
         <td style={{ textAlign: "right" }}>

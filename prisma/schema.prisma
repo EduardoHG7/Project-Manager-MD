@@ -268,7 +268,9 @@ model Espacio {
   atrasadoMotivo     String?
 
   cargaElectricaKw Float?
-  puntosLuz        String?
+  puntosLuz        String?  // texto libre anterior; reemplazado por puntos110v / puntos220v
+  puntos110v       Int?
+  puntos220v       Int?
   usaRigging       Boolean?
   riggingPuntos    Int?
   pisoTarima       String?
